@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Enterprise Cloud — Getting Started for Org Owners</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* GitHub dark — semantic palette */
+    --canvas:#0d1117;
+    --canvas-deep:#010409;
+    --surface:#161b22;
+    --surface-2:#1c2128;
+    --border:#30363d;
+    --border-muted:#21262d;
+    --fg:#e6edf3;
+    --fg-muted:#8b949e;
+    --fg-dim:#6e7681;
+    --blue:#58a6ff;
+    --blue-deep:#1f6feb;
+    --green:#3fb950;
+    --purple:#bc8cff;
+    --yellow:#d29922;
+    --red:#f85149;
+    --orange:#db6d28;
+
+    --display:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif;
+    --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1200px 700px at 78% -10%, rgba(31,111,235,.14), transparent 60%),
+      radial-gradient(900px 600px at 10% 110%, rgba(163,113,247,.10), transparent 55%),
+      var(--canvas-deep);
+    color:var(--fg);
+    font-family:var(--body);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---- 16:9 stage that fits any viewport ---- */
+  .stage{
+    position:relative;
+    width:min(100vw, 177.78vh);
+    height:min(56.25vw, 100vh);
+    background:
+      linear-gradient(180deg, var(--canvas), var(--canvas-deep));
+    overflow:hidden;
+  }
+
+  /* subtle grid texture */
+  .stage::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:
+      linear-gradient(var(--border-muted) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-muted) 1px, transparent 1px);
+    background-size:44px 44px;
+    -webkit-mask-image:radial-gradient(120% 90% at 50% 20%, #000 0%, transparent 75%);
+    mask-image:radial-gradient(120% 90% at 50% 20%, #000 0%, transparent 75%);
+    opacity:.35;
+  }
+
+  /* ---- slides ---- */
+  .slide{
+    position:absolute;inset:0;
+    padding:clamp(24px,4.4vw,64px) clamp(28px,5vw,80px) clamp(74px,9vw,104px);
+    display:flex;flex-direction:column;
+    opacity:0;visibility:hidden;
+    transform:translateY(14px);
+    transition:opacity .45s ease, transform .45s ease, visibility .45s;
+  }
+  .slide.active{opacity:1;visibility:visible;transform:none;transition-delay:.05s}
+
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:clamp(10px,1.05vw,13px);
+    letter-spacing:.14em;text-transform:uppercase;
+    color:var(--fg-dim);
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:clamp(14px,2.2vw,26px);
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 12px var(--blue)}
+  .eyebrow b{color:var(--blue);font-weight:500}
+
+  h1{font-family:var(--display);font-weight:700;line-height:1.02;letter-spacing:-.02em}
+  h2{font-family:var(--display);font-weight:600;line-height:1.05;letter-spacing:-.015em;
+     font-size:clamp(24px,3.5vw,46px);margin-bottom:clamp(10px,1.4vw,18px)}
+  .lead{color:var(--fg-muted);font-size:clamp(13px,1.5vw,19px);line-height:1.5;max-width:64ch}
+  strong{color:var(--fg);font-weight:600}
+  .em-blue{color:var(--blue)} .em-green{color:var(--green)} .em-purple{color:var(--purple)}
+  .em-yellow{color:var(--yellow)} .em-red{color:var(--red)}
+
+  code,.mono{font-family:var(--mono)}
+  .chip{
+    font-family:var(--mono);font-size:.82em;
+    background:var(--surface-2);border:1px solid var(--border);
+    padding:.12em .5em;border-radius:6px;color:var(--fg);white-space:nowrap;
+  }
+
+  /* generic content grid */
+  .body-area{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+  .cols{display:grid;gap:clamp(14px,1.8vw,26px)}
+  .cols.two{grid-template-columns:1fr 1fr}
+  .cols.three{grid-template-columns:repeat(3,1fr)}
+
+  .card{
+    background:linear-gradient(180deg,var(--surface),rgba(22,27,34,.6));
+    border:1px solid var(--border);border-radius:12px;
+    padding:clamp(14px,1.7vw,22px);
+    display:flex;flex-direction:column;gap:8px;min-height:0;
+  }
+  .card h3{font-family:var(--display);font-weight:600;font-size:clamp(14px,1.55vw,20px);
+    display:flex;align-items:center;gap:10px;letter-spacing:-.01em}
+  .card p{color:var(--fg-muted);font-size:clamp(12px,1.25vw,15.5px);line-height:1.48}
+  .card .k{font-family:var(--mono);font-size:clamp(10px,1vw,12px);color:var(--fg-dim);
+    letter-spacing:.08em;text-transform:uppercase}
+
+  .ico{width:1.15em;height:1.15em;flex:none;stroke-width:0}
+  .ico.stroke{stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+  ul.clean{list-style:none;display:flex;flex-direction:column;gap:clamp(9px,1.15vw,15px)}
+  ul.clean li{display:flex;gap:12px;align-items:flex-start;
+    font-size:clamp(13px,1.4vw,17px);line-height:1.42;color:var(--fg-muted)}
+  ul.clean li strong{color:var(--fg)}
+  ul.clean li .b{flex:none;margin-top:.18em;width:1.15em;height:1.15em}
+
+  .tag{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);
+    font-size:clamp(10px,1.05vw,12.5px);padding:5px 10px;border-radius:999px;
+    border:1px solid var(--border);background:var(--surface);color:var(--fg-muted)}
+  .tag .d{width:8px;height:8px;border-radius:50%}
+  .tagrow{display:flex;flex-wrap:wrap;gap:8px}
+
+  /* ---- git-graph nav rail ---- */
+  .rail{
+    position:absolute;left:clamp(28px,5vw,80px);right:clamp(28px,5vw,80px);
+    bottom:clamp(26px,3.4vw,40px);height:34px;
+    display:flex;align-items:center;gap:14px;z-index:20;
+  }
+  .rail .branch{font-family:var(--mono);font-size:12px;color:var(--fg-dim);
+    display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .rail .branch svg{width:14px;height:14px;stroke:var(--fg-dim);stroke-width:1.8;fill:none}
+  .graph{position:relative;flex:1;height:34px}
+  .graph .line{position:absolute;top:50%;left:0;height:2px;transform:translateY(-50%);
+    background:var(--border);width:100%;border-radius:2px}
+  .graph .line-done{position:absolute;top:50%;left:0;height:2px;transform:translateY(-50%);
+    background:linear-gradient(90deg,var(--green),var(--blue));border-radius:2px;
+    transition:width .45s ease;box-shadow:0 0 10px rgba(88,166,255,.5)}
+  .node{position:absolute;top:50%;transform:translate(-50%,-50%);
+    width:11px;height:11px;border-radius:50%;border:2px solid var(--fg-dim);
+    background:var(--canvas);cursor:pointer;transition:all .3s ease;padding:0}
+  .node:hover{border-color:var(--blue);transform:translate(-50%,-50%) scale(1.25)}
+  .node.done{border-color:var(--green);background:var(--green)}
+  .node.current{border-color:var(--blue);background:var(--blue);
+    box-shadow:0 0 0 4px rgba(88,166,255,.22),0 0 14px var(--blue);
+    width:14px;height:14px}
+  .node:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+  .counter{font-family:var(--mono);font-size:12px;color:var(--fg-muted);white-space:nowrap}
+  .counter b{color:var(--fg)}
+
+  /* click zones */
+  .zone{position:absolute;top:0;bottom:74px;width:22%;z-index:10;cursor:pointer}
+  .zone.left{left:0}.zone.right{right:0}
+
+  /* keyboard hint */
+  .hint{position:absolute;top:clamp(20px,3vw,34px);right:clamp(28px,5vw,80px);
+    font-family:var(--mono);font-size:11px;color:var(--fg-dim);z-index:20;
+    display:flex;gap:6px;align-items:center;opacity:.8}
+  .hint kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;
+    padding:1px 6px;background:var(--surface);color:var(--fg-muted);font-family:var(--mono);font-size:10.5px}
+
+  /* ---------- TITLE SLIDE ---------- */
+  #s0{justify-content:center;padding-bottom:clamp(90px,10vw,120px)}
+  .title-wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(20px,3vw,48px);align-items:center}
+  .title-wrap h1{font-size:clamp(30px,5.2vw,68px)}
+  .title-sub{margin-top:clamp(16px,2vw,26px);display:flex;flex-direction:column;gap:14px}
+  .octobox{aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative}
+  .sha{font-family:var(--mono);font-size:clamp(10px,1.1vw,13px);color:var(--fg-dim);letter-spacing:.05em}
+  .sha b{color:var(--green)}
+
+  /* hierarchy diagram */
+  .hier{display:flex;flex-direction:column;gap:clamp(8px,1.1vw,14px);width:100%}
+  .hier .row{display:flex;align-items:center;gap:14px;background:var(--surface);
+    border:1px solid var(--border);border-radius:11px;padding:clamp(11px,1.4vw,18px) clamp(14px,1.7vw,22px);
+    position:relative}
+  .hier .row .lvl{font-family:var(--mono);font-size:clamp(9px,.95vw,11.5px);color:var(--fg-dim);
+    letter-spacing:.1em;text-transform:uppercase;width:64px;flex:none}
+  .hier .row .nm{font-family:var(--display);font-weight:600;font-size:clamp(14px,1.7vw,22px)}
+  .hier .row .ds{color:var(--fg-muted);font-size:clamp(11px,1.2vw,14.5px);margin-left:auto;text-align:right}
+  .hier .row .ic{width:clamp(20px,2vw,26px);height:clamp(20px,2vw,26px);flex:none}
+  .hier .row.you{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue), 0 0 24px rgba(88,166,255,.18)}
+  .hier .row.you::after{content:"YOU ARE HERE";position:absolute;right:14px;top:-9px;
+    font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--canvas-deep);
+    background:var(--blue);padding:2px 8px;border-radius:999px;font-weight:700}
+  .hier .indent-1{margin-left:clamp(18px,2.4vw,40px)}
+  .hier .indent-2{margin-left:clamp(36px,4.8vw,80px)}
+  .hier .indent-3{margin-left:clamp(54px,7.2vw,120px)}
+
+  /* workflow strip */
+  .flow{display:flex;align-items:stretch;gap:0;width:100%}
+  .flow .step{flex:1;background:var(--surface);border:1px solid var(--border);
+    padding:clamp(12px,1.5vw,20px) clamp(10px,1.2vw,16px);display:flex;flex-direction:column;gap:7px;
+    position:relative}
+  .flow .step:first-child{border-radius:11px 0 0 11px}
+  .flow .step:last-child{border-radius:0 11px 11px 0}
+  .flow .step:not(:last-child){border-right:none}
+  .flow .step .n{font-family:var(--mono);font-size:11px;color:var(--fg-dim)}
+  .flow .step h4{font-family:var(--display);font-weight:600;font-size:clamp(13px,1.4vw,18px);
+    display:flex;align-items:center;gap:8px}
+  .flow .step p{color:var(--fg-muted);font-size:clamp(10px,1.1vw,13px);line-height:1.4}
+  .flow .arrow{display:flex;align-items:center;color:var(--fg-dim);padding:0 2px}
+  .flow .step.merge{border-color:var(--purple);box-shadow:inset 0 0 0 1px rgba(188,140,255,.4)}
+
+  /* compare grid */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,1.8vw,24px)}
+  .compare .side{border-radius:12px;padding:clamp(15px,1.9vw,24px);border:1px solid var(--border)}
+  .compare .side.std{background:var(--surface)}
+  .compare .side.emu{background:linear-gradient(180deg,rgba(31,111,235,.10),var(--surface));border-color:var(--blue-deep)}
+  .compare .side h3{font-family:var(--display);font-weight:600;font-size:clamp(14px,1.55vw,20px);
+    margin-bottom:12px;display:flex;align-items:center;gap:9px}
+  .compare .side ul{list-style:none;display:flex;flex-direction:column;gap:clamp(7px,.95vw,12px)}
+  .compare .side li{font-size:clamp(11.5px,1.25vw,15px);line-height:1.4;color:var(--fg-muted);
+    display:flex;gap:9px;align-items:flex-start}
+  .compare .side li svg{flex:none;width:1.05em;height:1.05em;margin-top:.15em}
+
+  /* checklist */
+  .check{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.3vw,18px) clamp(20px,3vw,44px)}
+  .check .item{display:flex;gap:12px;align-items:flex-start}
+  .check .box{width:20px;height:20px;flex:none;border:1.8px solid var(--green);border-radius:5px;
+    display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .check .box svg{width:12px;height:12px;stroke:var(--green);stroke-width:2.4;fill:none}
+  .check .item div strong{display:block;font-size:clamp(13px,1.4vw,17px);color:var(--fg);margin-bottom:1px}
+  .check .item div span{font-size:clamp(11px,1.2vw,14px);color:var(--fg-muted);line-height:1.35}
+
+  .footnote{margin-top:clamp(12px,1.6vw,20px);font-family:var(--mono);
+    font-size:clamp(10px,1.05vw,12.5px);color:var(--fg-dim);display:flex;align-items:center;gap:9px}
+  .footnote svg{width:14px;height:14px;stroke:var(--yellow);stroke-width:1.8;fill:none;flex:none}
+
+  .resources{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .resources a{font-family:var(--mono);font-size:clamp(11px,1.2vw,14px);color:var(--blue);
+    text-decoration:none;border:1px solid var(--border);border-radius:8px;padding:8px 12px;
+    background:var(--surface);display:inline-flex;align-items:center;gap:8px;transition:border-color .2s}
+  .resources a:hover{border-color:var(--blue)}
+  .resources a svg{width:13px;height:13px;stroke:var(--fg-dim);stroke-width:1.8;fill:none}
+
+  @media (max-width:640px){
+    .title-wrap{grid-template-columns:1fr}.octobox{display:none}
+    .cols.two,.cols.three,.compare,.check{grid-template-columns:1fr}
+    .hint{display:none}
+    .flow{flex-direction:column}
+    .flow .step:first-child{border-radius:11px 11px 0 0}
+    .flow .step:last-child{border-radius:0 0 11px 11px}
+    .flow .step:not(:last-child){border-right:1px solid var(--border);border-bottom:none}
+    .flow .arrow{transform:rotate(90deg)}
+    .hier .row .ds{display:none}
+    .hier .indent-1,.hier .indent-2,.hier .indent-3{margin-left:14px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <div class="hint" aria-hidden="true"><kbd>←</kbd><kbd>→</kbd><span>navigate</span></div>
+
+  <!-- ============ SLIDE 0 · TITLE ============ -->
+  <section class="slide" id="s0" data-section="Onboarding">
+    <div class="title-wrap">
+      <div>
+        <div class="eyebrow"><span class="dot"></span> GitHub Enterprise Cloud · <b>Getting Started</b></div>
+        <h1>Running an Organization on <span class="em-blue">GitHub Enterprise</span></h1>
+        <div class="title-sub">
+          <p class="lead">A field guide for organization owners — how governance, identity, and everyday workflow fit together when your enterprise runs on <strong>Enterprise Managed Users</strong> with <strong>Microsoft Entra ID</strong>.</p>
+          <div class="tagrow">
+            <span class="tag"><span class="d" style="background:var(--blue)"></span>Enterprise Cloud (EMU)</span>
+            <span class="tag"><span class="d" style="background:var(--purple)"></span>SSO via Entra ID</span>
+            <span class="tag"><span class="d" style="background:var(--green)"></span>~8 minutes</span>
+          </div>
+        </div>
+      </div>
+      <div class="octobox">
+        <svg viewBox="0 0 220 220" width="100%" style="max-width:300px">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#58a6ff"/><stop offset="1" stop-color="#bc8cff"/>
+            </linearGradient>
+          </defs>
+          <!-- animated branch graph -->
+          <g fill="none" stroke-width="3" stroke-linecap="round">
+            <path class="draw" d="M40 40 L40 180" stroke="#3fb950"/>
+            <path class="draw d2" d="M40 80 C40 110, 110 100, 110 130 L110 180" stroke="#58a6ff"/>
+            <path class="draw d3" d="M110 130 C110 150, 180 150, 180 120 L180 60" stroke="#bc8cff"/>
+            <path class="draw d4" d="M180 120 C180 150, 110 150, 110 160" stroke="#bc8cff"/>
+          </g>
+          <g>
+            <circle class="pop" cx="40" cy="40" r="8" fill="#3fb950"/>
+            <circle class="pop p2" cx="40" cy="80" r="8" fill="#3fb950"/>
+            <circle class="pop p3" cx="110" cy="130" r="8" fill="#58a6ff"/>
+            <circle class="pop p4" cx="180" cy="120" r="8" fill="#bc8cff"/>
+            <circle class="pop p5" cx="180" cy="60" r="8" fill="#bc8cff"/>
+            <circle class="pop p6" cx="40" cy="180" r="8" fill="#3fb950"/>
+            <circle class="pop p7" cx="110" cy="180" r="9" fill="url(#g1)" stroke="#0d1117" stroke-width="2"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="sha" style="position:absolute;bottom:clamp(72px,8.6vw,100px);left:clamp(28px,5vw,80px)">
+      HEAD → <b>main</b> · commit a1f9c3d · "init: your org, your rules"
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 1 · THE HIERARCHY ============ -->
+  <section class="slide" id="s1" data-section="Mental Model">
+    <div class="eyebrow"><span class="dot"></span> Mental Model · <b>Where you sit</b></div>
+    <h2>Four nested layers — you own the middle one</h2>
+    <p class="lead">Everything on the platform lives inside this hierarchy. Identity and platform-wide rules are set <em>above</em> you; the day-to-day work happens <em>below</em>.</p>
+    <div class="body-area">
+      <div class="hier">
+        <div class="row">
+          <span class="lvl">Layer 1</span>
+          <svg class="ic" viewBox="0 0 16 16" fill="var(--fg-muted)"><path d="M1.75 16A1.75 1.75 0 0 1 0 14.25V1.75C0 .784.784 0 1.75 0h8.5C11.216 0 12 .784 12 1.75v12.5c0 .085-.006.168-.018.25h2.268a.25.25 0 0 0 .25-.25V8.285a.25.25 0 0 0-.111-.208l-1.055-.703a.749.749 0 1 1 .832-1.248l1.055.703c.487.325.779.871.779 1.456v5.965A1.75 1.75 0 0 1 15.5 16H1.75ZM1.5 1.75v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25ZM3 3.75A.75.75 0 0 1 3.75 3h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 3 3.75ZM3.75 6h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM3 10.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1-.75-.75ZM7.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5ZM7 6.75A.75.75 0 0 1 7.75 6h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 7 6.75ZM7.75 9h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5Z"/></svg>
+          <span class="nm">Enterprise</span>
+          <span class="ds">Identity, SSO, SCIM, licensing — set by enterprise owners</span>
+        </div>
+        <div class="row you indent-1">
+          <span class="lvl">Layer 2</span>
+          <svg class="ic" viewBox="0 0 16 16" fill="var(--blue)"><path d="M2 5.5a3.5 3.5 0 1 1 5.898 2.549 5.508 5.508 0 0 1 3.034 4.084.75.75 0 1 1-1.482.235 4 4 0 0 0-7.9 0 .75.75 0 0 1-1.482-.236A5.507 5.507 0 0 1 3.102 8.05 3.493 3.493 0 0 1 2 5.5ZM11 4a3.001 3.001 0 0 1 2.22 5.018 5.01 5.01 0 0 1 2.56 3.012.749.749 0 0 1-.885.954.752.752 0 0 1-.549-.514 3.507 3.507 0 0 0-2.522-2.372.75.75 0 0 1-.574-.73v-.352a.75.75 0 0 1 .416-.672A1.5 1.5 0 0 0 11 5.5.75.75 0 0 1 11 4Zm-5.5-.5a2 2 0 1 0-.001 3.999A2 2 0 0 0 5.5 3.5Z"/></svg>
+          <span class="nm">Organization</span>
+          <span class="ds">Teams, repos, org policies — <strong>this is your domain</strong></span>
+        </div>
+        <div class="row indent-2">
+          <span class="lvl">Layer 3</span>
+          <svg class="ic" viewBox="0 0 16 16" fill="var(--purple)"><path d="M5.75 6.5a1.75 1.75 0 1 1 0-3.5 1.75 1.75 0 0 1 0 3.5ZM2 5.75a3.75 3.75 0 1 1 6.187 2.849A5.005 5.005 0 0 1 10.75 12.5a.75.75 0 0 1-1.5 0 3.5 3.5 0 0 0-7 0 .75.75 0 0 1-1.5 0 5.005 5.005 0 0 1 2.563-3.901A3.742 3.742 0 0 1 2 5.75Zm11.5 0a3.75 3.75 0 0 1-1.938 3.284A5.005 5.005 0 0 1 14.25 13a.75.75 0 0 1-1.5 0 3.5 3.5 0 0 0-1.762-3.038.75.75 0 0 1 .012-1.312A2.25 2.25 0 1 0 10.5 4.25a.75.75 0 0 1 0-1.5A3.75 3.75 0 0 1 13.5 5.75Z"/></svg>
+          <span class="nm">Teams</span>
+          <span class="ds">Groups that hold access — mirrored from Entra groups</span>
+        </div>
+        <div class="row indent-3">
+          <span class="lvl">Layer 4</span>
+          <svg class="ic" viewBox="0 0 16 16" fill="var(--green)"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z"/></svg>
+          <span class="nm">Repositories</span>
+          <span class="ds">The actual code, issues, and pull requests</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 · WHAT EMU CHANGES ============ -->
+  <section class="slide" id="s2" data-section="Identity">
+    <div class="eyebrow"><span class="dot"></span> Identity · <b>What EMU changes</b></div>
+    <h2>These aren't ordinary GitHub accounts</h2>
+    <p class="lead">Enterprise Managed Users trade openness for control. Knowing the guardrails up front saves you from confused support tickets later.</p>
+    <div class="body-area">
+      <div class="compare">
+        <div class="side std">
+          <h3><svg class="ico stroke" viewBox="0 0 24 24" style="stroke:var(--fg-muted)"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z"/></svg> Standard GitHub</h3>
+          <ul>
+            <li><svg viewBox="0 0 16 16" fill="var(--fg-dim)"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM4.5 7.25h7a.75.75 0 0 1 0 1.5h-7a.75.75 0 0 1 0-1.5Z"/></svg> People sign up themselves, pick any username</li>
+            <li><svg viewBox="0 0 16 16" fill="var(--fg-dim)"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM4.5 7.25h7a.75.75 0 0 1 0 1.5h-7a.75.75 0 0 1 0-1.5Z"/></svg> Public repos, forks, and gists allowed</li>
+            <li><svg viewBox="0 0 16 16" fill="var(--fg-dim)"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM4.5 7.25h7a.75.75 0 0 1 0 1.5h-7a.75.75 0 0 1 0-1.5Z"/></svg> Invite anyone as an outside collaborator</li>
+            <li><svg viewBox="0 0 16 16" fill="var(--fg-dim)"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM4.5 7.25h7a.75.75 0 0 1 0 1.5h-7a.75.75 0 0 1 0-1.5Z"/></svg> One account roams the whole internet</li>
+          </ul>
+        </div>
+        <div class="side emu">
+          <h3><svg class="ico stroke" viewBox="0 0 24 24" style="stroke:var(--blue)"><path d="M12 2 4 5v6c0 5 8 9 8 9s8-4 8-9V5l-8-3Z"/></svg> Your enterprise (EMU)</h3>
+          <ul>
+            <li><svg viewBox="0 0 16 16" fill="var(--blue)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06l2.72 2.72 6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg> Accounts are <strong>provisioned from Entra</strong> via SCIM</li>
+            <li><svg viewBox="0 0 16 16" fill="var(--blue)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06l2.72 2.72 6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg> Usernames are fixed: <span class="chip">alex_yourco</span></li>
+            <li><svg viewBox="0 0 16 16" fill="var(--blue)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06l2.72 2.72 6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg> <strong>No public repos, no forks out, no outside collaborators</strong></li>
+            <li><svg viewBox="0 0 16 16" fill="var(--blue)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06l2.72 2.72 6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg> Accounts only see <strong>your</strong> enterprise — a walled garden</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footnote">
+        <svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        Deprovisioning in Entra suspends the GitHub account — offboarding is automatic, not a manual step.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3 · WHO DOES WHAT ============ -->
+  <section class="slide" id="s3" data-section="Roles">
+    <div class="eyebrow"><span class="dot"></span> Roles · <b>Enterprise owner vs. you</b></div>
+    <h2>Know your lane — and your ceiling</h2>
+    <p class="lead">Some controls simply aren't yours to change; the enterprise owner sets them once for everyone. Escalate those instead of hunting for a setting that isn't there.</p>
+    <div class="body-area">
+      <div class="cols two">
+        <div class="card" style="border-color:var(--border)">
+          <span class="k" style="color:var(--yellow)">Above you — enterprise owner</span>
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--yellow)"><path d="M2 5.5a3.5 3.5 0 1 1 5.898 2.549 5.508 5.508 0 0 1 3.034 4.084.75.75 0 1 1-1.482.235 4 4 0 0 0-7.9 0 .75.75 0 0 1-1.482-.236A5.507 5.507 0 0 1 3.102 8.05 3.493 3.493 0 0 1 2 5.5Z"/></svg> Sets the platform</h3>
+          <p>SSO &amp; SCIM with Entra · enterprise-wide policies · license &amp; Copilot allocation · which orgs exist · security defaults every org inherits.</p>
+        </div>
+        <div class="card" style="border-color:var(--blue);box-shadow:0 0 24px rgba(88,166,255,.12)">
+          <span class="k" style="color:var(--blue)">Your seat — organization owner</span>
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--blue)"><path d="M2 5.5a3.5 3.5 0 1 1 5.898 2.549 5.508 5.508 0 0 1 3.034 4.084.75.75 0 1 1-1.482.235 4 4 0 0 0-7.9 0 .75.75 0 0 1-1.482-.236A5.507 5.507 0 0 1 3.102 8.05 3.493 3.493 0 0 1 2 5.5Zm9-1.5a3.001 3.001 0 0 1 2.22 5.018 5.01 5.01 0 0 1 2.56 3.012.749.749 0 0 1-1.434.44 3.507 3.507 0 0 0-2.522-2.372.75.75 0 0 1-.574-.73v-.352a.75.75 0 0 1 .416-.672A1.5 1.5 0 0 0 11 5.5.75.75 0 0 1 11 4Z"/></svg> Runs the org</h3>
+          <p>Create teams &amp; repos · assign repo roles · branch protection rulesets · org-level policies · enable security features · manage the org profile.</p>
+        </div>
+      </div>
+      <div class="footnote">
+        <svg viewBox="0 0 24 24" style="stroke:var(--blue)"><path d="M12 16v-4m0-4h.01M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z"/></svg>
+        Rule of thumb: if it's about <em>who a person is</em>, it's enterprise + Entra. If it's about <em>what a repo does</em>, it's you.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 · PEOPLE & ACCESS ============ -->
+  <section class="slide" id="s4" data-section="Access">
+    <div class="eyebrow"><span class="dot"></span> Access · <b>How members arrive</b></div>
+    <h2>You don't add people — Entra does</h2>
+    <p class="lead">Membership flows in one direction: from your identity provider into GitHub. Manage access by <strong>editing Entra groups</strong>, not by clicking around in GitHub.</p>
+    <div class="body-area">
+      <div class="flow" style="margin-bottom:clamp(14px,1.8vw,22px)">
+        <div class="step">
+          <span class="n">01</span>
+          <h4><svg class="ico" viewBox="0 0 16 16" fill="var(--purple)"><path d="M2 5.5a3.5 3.5 0 1 1 5.898 2.549 5.508 5.508 0 0 1 3.034 4.084.75.75 0 1 1-1.482.235 4 4 0 0 0-7.9 0 .75.75 0 0 1-1.482-.236A5.507 5.507 0 0 1 3.102 8.05 3.493 3.493 0 0 1 2 5.5Z"/></svg> Entra group</h4>
+          <p>Admin adds a person to a security group in Entra ID.</p>
+        </div>
+        <div class="arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="step">
+          <span class="n">02</span>
+          <h4><svg class="ico" viewBox="0 0 16 16" fill="var(--blue)"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm1.5 5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/></svg> SCIM sync</h4>
+          <p>Account is provisioned and mapped to the matching GitHub team.</p>
+        </div>
+        <div class="arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="step merge">
+          <span class="n">03</span>
+          <h4><svg class="ico" viewBox="0 0 16 16" fill="var(--green)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06l2.72 2.72 6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg> In your org</h4>
+          <p>They land on the right teams with the right repo access — automatically.</p>
+        </div>
+      </div>
+      <div class="cols two">
+        <div class="card">
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--yellow)"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg> The EMU catch</h3>
+          <p>Create the GitHub team <strong>first</strong>, then connect it to an Entra <strong>security group</strong>. Nested groups and Microsoft 365 groups won't sync.</p>
+        </div>
+        <div class="card">
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--blue)"><path d="M8.75 1.75V5h3.25a.75.75 0 0 1 0 1.5H8.75v3.25a.75.75 0 0 1-1.5 0V6.5H4a.75.75 0 0 1 0-1.5h3.25V1.75a.75.75 0 0 1 1.5 0Z"/></svg> Base permission</h3>
+          <p>Set the org's default member access to <span class="chip">None</span> or <span class="chip">Read</span> — then grant more deliberately through teams.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 · TEAMS & ROLES ============ -->
+  <section class="slide" id="s5" data-section="Access">
+    <div class="eyebrow"><span class="dot"></span> Access · <b>Teams &amp; repository roles</b></div>
+    <h2>Grant access to teams, never to people</h2>
+    <p class="lead">Five built-in repository roles, from look-but-don't-touch to full control. Assign them to teams so access follows the org chart on its own.</p>
+    <div class="body-area">
+      <div class="cols" style="grid-template-columns:repeat(5,1fr)">
+        <div class="card"><span class="k" style="color:var(--fg-dim)">Level 1</span><h3 style="font-size:clamp(13px,1.4vw,18px)"><span style="color:var(--fg-muted)">Read</span></h3><p>Clone, open issues, comment.</p></div>
+        <div class="card"><span class="k" style="color:var(--blue)">Level 2</span><h3 style="font-size:clamp(13px,1.4vw,18px)"><span class="em-blue">Triage</span></h3><p>Manage issues &amp; PRs, no code.</p></div>
+        <div class="card"><span class="k" style="color:var(--green)">Level 3</span><h3 style="font-size:clamp(13px,1.4vw,18px)"><span class="em-green">Write</span></h3><p>Push branches, open PRs. Most devs live here.</p></div>
+        <div class="card"><span class="k" style="color:var(--yellow)">Level 4</span><h3 style="font-size:clamp(13px,1.4vw,18px)"><span class="em-yellow">Maintain</span></h3><p>Manage the repo, minus sensitive settings.</p></div>
+        <div class="card" style="border-color:var(--red)"><span class="k" style="color:var(--red)">Level 5</span><h3 style="font-size:clamp(13px,1.4vw,18px)"><span class="em-red">Admin</span></h3><p>Everything, incl. delete. Keep it rare.</p></div>
+      </div>
+      <div class="cols two" style="margin-top:clamp(14px,1.8vw,22px)">
+        <div class="card"><h3><svg class="ico" viewBox="0 0 16 16" fill="var(--purple)"><path d="M5.75 6.5a1.75 1.75 0 1 1 0-3.5 1.75 1.75 0 0 1 0 3.5ZM2 5.75a3.75 3.75 0 1 1 6.187 2.849A5.005 5.005 0 0 1 10.75 12.5a.75.75 0 0 1-1.5 0 3.5 3.5 0 0 0-7 0 .75.75 0 0 1-1.5 0 5.005 5.005 0 0 1 2.563-3.901A3.742 3.742 0 0 1 2 5.75Z"/></svg> Nested teams inherit</h3><p>A parent team's access flows to child teams. Model <span class="chip">Engineering → Platform → Payments</span> and grant broadly at the top.</p></div>
+        <div class="card"><h3><svg class="ico" viewBox="0 0 16 16" fill="var(--green)"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0Z"/></svg> Least privilege wins</h3><p>Start people on <strong>Read</strong> or <strong>Write</strong>. Admin should be a two-person job, not a default.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6 · REPOSITORIES ============ -->
+  <section class="slide" id="s6" data-section="Workflow">
+    <div class="eyebrow"><span class="dot"></span> Workflow · <b>Repositories 101</b></div>
+    <h2>A repository is one project's home</h2>
+    <p class="lead">Code, history, issues, pull requests, and settings all live together. A few defaults are worth getting right on day one.</p>
+    <div class="body-area">
+      <div class="cols three">
+        <div class="card">
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--blue)"><path d="M8.75 1.75V5h3.25a.75.75 0 0 1 0 1.5H8.75v3.25a.75.75 0 0 1-1.5 0V6.5H4a.75.75 0 0 1 0-1.5h3.25V1.75a.75.75 0 0 1 1.5 0Z"/></svg> Visibility</h3>
+          <p>Under EMU it's <strong>Private</strong> or <strong>Internal</strong> only. Internal = visible to the whole enterprise; great for shared libraries. Public is off.</p>
+        </div>
+        <div class="card">
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--green)"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.492 2.492 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Z"/></svg> Default branch</h3>
+          <p><span class="chip">main</span> is the source of truth. Everything ships by merging into it — so it's the branch you'll protect.</p>
+        </div>
+        <div class="card">
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--purple)"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25Zm4 .5v11h10.25a.25.25 0 0 0 .25-.25V2.25a.25.25 0 0 0-.25-.25Z"/></svg> Starter files</h3>
+          <p>A <span class="chip">README</span>, a <span class="chip">.gitignore</span>, and a license (or a template repo) save every new project the same setup tax.</p>
+        </div>
+      </div>
+      <div class="footnote">
+        <svg viewBox="0 0 24 24" style="stroke:var(--blue)"><path d="M12 16v-4m0-4h.01M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z"/></svg>
+        Tip: turn your standard setup into a <em>template repository</em> so new repos start compliant instead of being fixed later.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 · THE WORKFLOW ============ -->
+  <section class="slide" id="s7" data-section="Workflow">
+    <div class="eyebrow"><span class="dot"></span> Workflow · <b>The pull request loop</b></div>
+    <h2>Every change takes the same path</h2>
+    <p class="lead">Nobody edits <span class="chip">main</span> directly. Work happens on a branch and comes home through a reviewed pull request — that loop <em>is</em> the collaboration model.</p>
+    <div class="body-area">
+      <div class="flow">
+        <div class="step">
+          <span class="n">git checkout -b</span>
+          <h4><svg class="ico" viewBox="0 0 16 16" fill="var(--green)"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.492 2.492 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Z"/></svg> Branch</h4>
+          <p>Split off from main to work in isolation.</p>
+        </div>
+        <div class="arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="step">
+          <span class="n">git commit</span>
+          <h4><svg class="ico" viewBox="0 0 16 16" fill="var(--blue)"><path d="M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5Zm-1.43-.75a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"/></svg> Commit</h4>
+          <p>Save focused, described chunks of work.</p>
+        </div>
+        <div class="arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="step">
+          <span class="n">open PR</span>
+          <h4><svg class="ico" viewBox="0 0 16 16" fill="var(--purple)"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177Z"/></svg> Review</h4>
+          <p>Open a PR; teammates review and discuss.</p>
+        </div>
+        <div class="arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <div class="step merge">
+          <span class="n">merge → main</span>
+          <h4><svg class="ico" viewBox="0 0 16 16" fill="var(--purple)"><path d="M5.45 5.154A4.25 4.25 0 0 0 9.25 7.5h1.378a2.251 2.251 0 1 1 0 1.5H9.25A5.734 5.734 0 0 1 5 7.123v3.505a2.25 2.25 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.95-.218Z"/></svg> Merge</h4>
+          <p>Checks pass, approvals in — it ships to main.</p>
+        </div>
+      </div>
+      <div class="footnote">
+        <svg viewBox="0 0 24 24" style="stroke:var(--green)"><path d="m9 11 3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        This is also where your rules bite: the merge button stays greyed out until protection requirements are met.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8 · BRANCH PROTECTION ============ -->
+  <section class="slide" id="s8" data-section="Governance">
+    <div class="eyebrow"><span class="dot"></span> Governance · <b>Protect main</b></div>
+    <h2>Rulesets are your quality gate</h2>
+    <p class="lead">A ruleset on <span class="chip">main</span> turns "please review" into an enforced contract. Set it once per repo (or across repos) and the platform holds the line.</p>
+    <div class="body-area">
+      <ul class="clean">
+        <li><svg class="b" viewBox="0 0 16 16" fill="var(--green)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06l2.72 2.72 6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg><span><strong>Require a pull request</strong> before merging — no direct pushes to main.</span></li>
+        <li><svg class="b" viewBox="0 0 16 16" fill="var(--green)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06l2.72 2.72 6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg><span><strong>Require approvals</strong> (one or two reviewers) and dismiss stale ones when new commits land.</span></li>
+        <li><svg class="b" viewBox="0 0 16 16" fill="var(--green)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06l2.72 2.72 6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg><span><strong>Require status checks</strong> — tests and scans must pass before the button lights up.</span></li>
+        <li><svg class="b" viewBox="0 0 16 16" fill="var(--green)"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 1.06-1.06l2.72 2.72 6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg><span><strong>Block force-pushes</strong> and require linear history to keep the record clean.</span></li>
+        <li><svg class="b" viewBox="0 0 16 16" fill="var(--purple)"><path d="M2 2.75A2.75 2.75 0 0 1 4.75 0h9.5a.75.75 0 0 1 .53 1.28L11.06 5l3.72 3.72a.75.75 0 0 1-.53 1.28h-9a1.25 1.25 0 0 0-1.25 1.25v3a.75.75 0 0 1-1.5 0Z"/></svg><span>Add a <span class="chip">CODEOWNERS</span> file to auto-request the right reviewers for each path.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9 · SECURITY ============ -->
+  <section class="slide" id="s9" data-section="Governance">
+    <div class="eyebrow"><span class="dot"></span> Governance · <b>Security essentials</b></div>
+    <h2>Turn on the safety net</h2>
+    <p class="lead">A few toggles catch the most common mistakes automatically. Some are free platform features; the deeper scanning needs GitHub Advanced Security to be licensed for your enterprise.</p>
+    <div class="body-area">
+      <div class="cols two">
+        <div class="card">
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--green)"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM6.379 5.227A.25.25 0 0 1 6.75 5h2.5a.25.25 0 0 1 .225.363l-1.25 2.5A.25.25 0 0 1 8 8H6.75a.25.25 0 0 1-.223-.363Z"/></svg> Sign-in &amp; MFA</h3>
+          <p>Handled for you: authentication and multi-factor happen <strong>in Entra ID</strong> at sign-in. There's no separate GitHub password to enforce.</p>
+        </div>
+        <div class="card">
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--yellow)"><path d="M4 4v2h-.25A1.75 1.75 0 0 0 2 7.75v5.5c0 .966.784 1.75 1.75 1.75h8.5A1.75 1.75 0 0 0 14 13.25v-5.5A1.75 1.75 0 0 0 12.25 6H12V4a4 4 0 1 0-8 0Zm6.5 2V4a2.5 2.5 0 0 0-5 0v2Z"/></svg> Secret scanning</h3>
+          <p>Turn on <strong>push protection</strong> so a leaked API key or token is blocked before it ever reaches the repo.</p>
+        </div>
+        <div class="card">
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--blue)"><path d="M8.533.133a1.75 1.75 0 0 0-1.066 0l-5.25 1.68A1.75 1.75 0 0 0 1 3.48V7c0 1.566.32 3.182 1.303 4.682.983 1.498 2.585 2.813 5.032 3.855a1.7 1.7 0 0 0 1.33 0c2.447-1.042 4.049-2.357 5.032-3.855C14.68 10.182 15 8.566 15 7V3.48a1.75 1.75 0 0 0-1.217-1.667Z"/></svg> Dependabot</h3>
+          <p>Automatic alerts and PRs for vulnerable dependencies — patch known CVEs without hunting for them.</p>
+        </div>
+        <div class="card">
+          <h3><svg class="ico" viewBox="0 0 16 16" fill="var(--purple)"><path d="M4.72 3.22a.75.75 0 0 1 1.06 1.06L2.06 8l3.72 3.72a.75.75 0 1 1-1.06 1.06L.47 8.53a.75.75 0 0 1 0-1.06Zm6.56 0a.75.75 0 1 0-1.06 1.06L13.94 8l-3.72 3.72a.75.75 0 1 0 1.06 1.06l4.25-4.25a.75.75 0 0 0 0-1.06Z"/></svg> Code scanning</h3>
+          <p>Static analysis (CodeQL) flags injection, unsafe patterns, and more right inside the pull request.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10 · POLICIES ============ -->
+  <section class="slide" id="s10" data-section="Governance">
+    <div class="eyebrow"><span class="dot"></span> Governance · <b>Org-level policies you set</b></div>
+    <h2>Set the guardrails once</h2>
+    <p class="lead">These org settings decide what members can and can't do by default. Tighten them early — loosening later is far easier than clawing access back.</p>
+    <div class="body-area">
+      <div class="cols three">
+        <div class="card"><h3 style="font-size:clamp(13px,1.5vw,19px)">Repository creation</h3><p>Decide who can create repos and which visibilities are allowed — keep it to Private/Internal.</p></div>
+        <div class="card"><h3 style="font-size:clamp(13px,1.5vw,19px)">Default permission</h3><p>The baseline every member gets org-wide. <span class="chip">None</span> or <span class="chip">Read</span> is the safe floor.</p></div>
+        <div class="card"><h3 style="font-size:clamp(13px,1.5vw,19px)">Deletion &amp; transfer</h3><p>Restrict who can delete or transfer repos so nothing important vanishes by accident.</p></div>
+        <div class="card"><h3 style="font-size:clamp(13px,1.5vw,19px)">Apps &amp; OAuth</h3><p>Require approval for third-party apps and GitHub Apps before they touch org data.</p></div>
+        <div class="card"><h3 style="font-size:clamp(13px,1.5vw,19px)">Actions policy</h3><p>Choose which Actions/workflows may run — allow-list trusted publishers.</p></div>
+        <div class="card"><h3 style="font-size:clamp(13px,1.5vw,19px)">Default rulesets</h3><p>Apply branch protection across every repo at once, not one at a time.</p></div>
+      </div>
+      <div class="footnote">
+        <svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        Some of these may be locked by an enterprise-wide policy — a greyed-out setting means it's decided above your level.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11 · FIRST WEEK / CLOSE ============ -->
+  <section class="slide" id="s11" data-section="Onboarding">
+    <div class="eyebrow"><span class="dot"></span> Onboarding · <b>Your first week</b></div>
+    <h2>Ship these seven things</h2>
+    <p class="lead">A concrete starting checklist. Do them in order and your org is on solid footing.</p>
+    <div class="body-area">
+      <div class="check">
+        <div class="item"><span class="box"><svg viewBox="0 0 16 16"><path d="M2 8l4 4 8-9"/></svg></span><div><strong>Fill in the org profile</strong><span>Name, description, and a README so people know what they've joined.</span></div></div>
+        <div class="item"><span class="box"><svg viewBox="0 0 16 16"><path d="M2 8l4 4 8-9"/></svg></span><div><strong>Set base permission to Read/None</strong><span>Start restrictive; grant up through teams.</span></div></div>
+        <div class="item"><span class="box"><svg viewBox="0 0 16 16"><path d="M2 8l4 4 8-9"/></svg></span><div><strong>Create teams, connect Entra groups</strong><span>Security groups only — team first, then link.</span></div></div>
+        <div class="item"><span class="box"><svg viewBox="0 0 16 16"><path d="M2 8l4 4 8-9"/></svg></span><div><strong>Add a default ruleset for main</strong><span>Require PRs, reviews, and passing checks.</span></div></div>
+        <div class="item"><span class="box"><svg viewBox="0 0 16 16"><path d="M2 8l4 4 8-9"/></svg></span><div><strong>Enable secret scanning + Dependabot</strong><span>Push protection on from day one.</span></div></div>
+        <div class="item"><span class="box"><svg viewBox="0 0 16 16"><path d="M2 8l4 4 8-9"/></svg></span><div><strong>Restrict app &amp; Actions access</strong><span>Approve third-party integrations deliberately.</span></div></div>
+        <div class="item" style="grid-column:1 / -1"><span class="box"><svg viewBox="0 0 16 16"><path d="M2 8l4 4 8-9"/></svg></span><div><strong>Publish a template repo</strong><span>New projects start compliant — README, license, .gitignore, and rulesets baked in.</span></div></div>
+      </div>
+      <div class="resources">
+        <a href="https://docs.github.com/en/enterprise-cloud@latest/admin/managing-iam" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>Identity &amp; SCIM docs</a>
+        <a href="https://docs.github.com/en/enterprise-cloud@latest/organizations" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>Organizations guide</a>
+        <a href="https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>Rulesets</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- click navigation zones -->
+  <div class="zone left"  id="prevZone" aria-label="Previous slide"></div>
+  <div class="zone right" id="nextZone" aria-label="Next slide"></div>
+
+  <!-- git-graph navigation rail -->
+  <div class="rail">
+    <span class="branch"><svg viewBox="0 0 16 16"><path d="M4 3.5v9M12 6.5v0a3 3 0 0 1-3 3H6"/><circle cx="4" cy="2.5" r="1.6"/><circle cx="4" cy="13.5" r="1.6"/><circle cx="12" cy="5.5" r="1.6"/></svg>main</span>
+    <div class="graph" id="graph">
+      <div class="line"></div>
+      <div class="line-done" id="lineDone"></div>
+    </div>
+    <span class="counter"><b id="curNum">01</b> / <span id="totNum">12</span></span>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let idx = 0;
+  const graph = document.getElementById('graph');
+  const lineDone = document.getElementById('lineDone');
+  const curNum = document.getElementById('curNum');
+  document.getElementById('totNum').textContent = String(total).padStart(2,'0');
+
+  // build commit nodes
+  const nodes = [];
+  slides.forEach((s,i)=>{
+    const n = document.createElement('button');
+    n.className='node';
+    n.style.left = (total===1?50:(i/(total-1))*100)+'%';
+    n.setAttribute('aria-label','Go to slide '+(i+1));
+    n.addEventListener('click',(e)=>{e.stopPropagation();go(i);});
+    graph.appendChild(n);
+    nodes.push(n);
+  });
+
+  function go(n){
+    idx = Math.max(0, Math.min(total-1, n));
+    slides.forEach((s,i)=>s.classList.toggle('active', i===idx));
+    nodes.forEach((nd,i)=>{
+      nd.classList.toggle('done', i<idx);
+      nd.classList.toggle('current', i===idx);
+    });
+    lineDone.style.width = (total===1?0:(idx/(total-1))*100)+'%';
+    curNum.textContent = String(idx+1).padStart(2,'0');
+  }
+
+  function next(){ if(idx<total-1) go(idx+1); }
+  function prev(){ if(idx>0) go(idx-1); }
+
+  document.getElementById('nextZone').addEventListener('click',next);
+  document.getElementById('prevZone').addEventListener('click',prev);
+
+  document.addEventListener('keydown',(e)=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();next();}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+    else if(e.key==='Home'){e.preventDefault();go(0);}
+    else if(e.key==='End'){e.preventDefault();go(total-1);}
+  });
+
+  // swipe on touch
+  let sx=null;
+  document.addEventListener('touchstart',e=>{sx=e.changedTouches[0].clientX;},{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(sx===null)return;
+    const dx=e.changedTouches[0].clientX-sx;
+    if(Math.abs(dx)>50){dx<0?next():prev();}
+    sx=null;
+  },{passive:true});
+
+  go(0);
+})();
+</script>
+
+<style>
+  /* title-slide draw-in animation (respects reduced motion via earlier rule) */
+  .draw{stroke-dasharray:200;stroke-dashoffset:200;animation:draw 1.1s ease forwards}
+  .draw.d2{animation-delay:.35s}.draw.d3{animation-delay:.7s}.draw.d4{animation-delay:.95s}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .pop{transform-box:fill-box;transform-origin:center;scale:0;animation:pop .4s ease forwards}
+  .pop{animation-delay:.2s}.pop.p2{animation-delay:.5s}.pop.p3{animation-delay:.9s}
+  .pop.p4{animation-delay:1.15s}.pop.p5{animation-delay:1.3s}.pop.p6{animation-delay:1.0s}
+  .pop.p7{animation-delay:1.5s}
+  @keyframes pop{to{scale:1}}
+</style>
+</body>
+</html>
