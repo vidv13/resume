@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform Cost Estimate — MLZ</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0d0d0f;--paper:#f5f2eb;--steel:#1a2332;--azure:#0078d4;--hub:#7c3aed;--accent:#e8e0d0;--rule:rgba(13,13,15,.12);--green:#00b4a0;--amber:#f59e0b;--mono:'IBM Plex Mono',monospace;--serif:'Fraunces',serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--mono);min-height:100vh}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:.5}
+  header{border-bottom:1px solid var(--rule);padding:2rem 3rem;display:flex;justify-content:space-between;align-items:flex-end}
+  .logo{font-family:var(--serif);font-size:1.1rem;font-weight:600}
+  .logo span{color:var(--azure)}
+  .meta{font-size:.6rem;color:rgba(13,13,15,.4);letter-spacing:.1em;text-transform:uppercase;text-align:right;line-height:1.8}
+  .hero{padding:3rem 3rem 2rem}
+  .hero h1{font-family:var(--serif);font-size:clamp(2rem,4vw,3.2rem);font-weight:900;line-height:1.05;letter-spacing:-.03em;margin-bottom:.8rem}
+  .hero h1 em{font-style:italic;font-weight:300;color:var(--azure)}
+  .hero p{font-size:.72rem;color:rgba(13,13,15,.5);line-height:1.9;max-width:620px}
+  .banner{margin:0 3rem 2rem;border:1px solid var(--hub);background:rgba(124,58,237,.06);padding:1.2rem 1.5rem;font-size:.69rem;line-height:1.8;color:rgba(13,13,15,.6)}
+  .banner strong{color:var(--hub)}
+  .totals{margin:0 3rem 2rem;border:1px solid var(--rule);display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--rule);gap:1px}
+  .tc{background:var(--paper);padding:1.5rem 1.8rem}
+  .tc .label{font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(13,13,15,.4);margin-bottom:.5rem}
+  .tc .amount{font-family:var(--serif);font-size:1.9rem;font-weight:900;letter-spacing:-.03em;line-height:1}
+  .tc .sub{font-size:.6rem;color:rgba(13,13,15,.4);margin-top:.4rem;line-height:1.6}
+  .tc.hl{background:var(--steel)}
+  .tc.hl .label{color:rgba(255,255,255,.4)}.tc.hl .amount{color:#fff}.tc.hl .sub{color:rgba(255,255,255,.35)}
+  .tc.shared{background:rgba(124,58,237,.07)}
+  .tc.shared .amount{color:var(--hub)}
+  .controls{margin:0 3rem 2rem;border:1px solid var(--rule);padding:1.5rem 2rem;background:var(--accent);display:flex;gap:2.5rem;flex-wrap:wrap;align-items:flex-end}
+  .cg{display:flex;flex-direction:column;gap:.4rem}
+  .cg label{font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(13,13,15,.5)}
+  .cg select,.cg input[type=range]{font-family:var(--mono);font-size:.7rem;background:var(--paper);border:1px solid var(--rule);padding:.4rem .6rem;cursor:pointer}
+  .cg input[type=range]{width:150px}
+  .cg .rv{font-size:.72rem;color:var(--azure)}
+  .cg.toggle{flex-direction:row;align-items:center;gap:.5rem}
+  .cg.toggle input{width:14px;height:14px;accent-color:var(--azure);cursor:pointer}
+  .note{font-size:.63rem;color:rgba(13,13,15,.4);line-height:1.7;max-width:250px}
+  .tbl{margin:0 3rem 2rem;border:1px solid var(--rule)}
+  .th{display:grid;grid-template-columns:2.2fr 1.3fr .9fr 1fr .9fr;background:var(--steel);color:rgba(255,255,255,.6);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;padding:.8rem 1.5rem;gap:1rem}
+  .sh{background:var(--accent);padding:.65rem 1.5rem;font-size:.59rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(13,13,15,.5);border-bottom:1px solid var(--rule)}
+  .sh.hubsec{background:rgba(124,58,237,.09);color:var(--hub)}
+  .row{display:grid;grid-template-columns:2.2fr 1.3fr .9fr 1fr .9fr;gap:1rem;padding:1rem 1.5rem;border-bottom:1px solid var(--rule);font-size:.69rem;align-items:start;transition:background .15s}
+  .row:hover{background:var(--accent)}
+  .row .nm{font-weight:600}
+  .row .ds{font-size:.61rem;color:rgba(13,13,15,.45);margin-top:.25rem;line-height:1.65}
+  .r{text-align:right}
+  .cost{font-weight:600}
+  .badge{display:inline-block;font-size:.53rem;padding:2px 7px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;margin-top:.3rem}
+  .b-new{color:var(--amber)}.b-chg{color:var(--azure)}.b-shr{color:var(--hub)}.b-free{color:var(--green)}
+  .sub-row{display:grid;grid-template-columns:2.2fr 1.3fr .9fr 1fr .9fr;gap:1rem;padding:.85rem 1.5rem;background:var(--accent);border-bottom:1px solid var(--rule);font-size:.67rem;font-weight:600}
+  .tot-row{display:grid;grid-template-columns:2.2fr 1.3fr .9fr 1fr .9fr;gap:1rem;padding:1.2rem 1.5rem;background:var(--steel);color:#fff;font-size:.72rem;font-weight:600}
+  .savings{margin:0 3rem 2rem;border:1px solid var(--rule);display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--rule)}
+  .sv{background:var(--paper);padding:1.4rem 1.6rem}
+  .sv h4{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(13,13,15,.4);margin-bottom:.4rem}
+  .sv .amt{font-family:var(--serif);font-size:1.25rem;font-weight:600;color:var(--green);letter-spacing:-.02em}
+  .sv p{font-size:.64rem;color:rgba(13,13,15,.5);margin-top:.35rem;line-height:1.7}
+  .notes{margin:0 3rem 3rem;border:1px solid var(--rule);padding:1.6rem 2rem;font-size:.69rem;line-height:1.9;color:rgba(13,13,15,.55)}
+  .notes strong{color:var(--ink);font-weight:600}
+  .notes ul{padding-left:1.2rem;margin-top:.5rem}
+  .notes li{margin-bottom:.35rem}
+  @media(max-width:700px){
+    header,.hero,.controls,.tbl,.savings,.notes,.totals,.banner{margin-left:1rem;margin-right:1rem;padding-left:1.2rem;padding-right:1.2rem}
+    .th,.row,.sub-row,.tot-row{grid-template-columns:2fr 1fr}
+    .th>*:nth-child(n+3),.row>*:nth-child(n+3),.sub-row>*:nth-child(n+3),.tot-row>*:nth-child(n+3){display:none}
+    .totals,.savings{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">internal<span>.</span>platform <span style="color:rgba(13,13,15,.3);font-weight:400">/ cost</span></div>
+  <div class="meta">Azure Commercial · MLZ hub-and-spoke<br>List price · verify in Azure Calculator</div>
+</header>
+
+<div class="hero">
+  <h1>Cost Estimate<br><em>on Mission LZ</em></h1>
+  <p>Monthly infrastructure cost for the platform at rest. Separated into what the landing zone already costs (shared, likely already funded) and what your platform actually adds on top.</p>
+</div>
+
+<div class="banner">
+  <strong>Why this replaces the earlier estimate:</strong> the previous version omitted the MLZ hub firewall entirely, budgeted a Log Analytics workspace you already have, priced ACR at Standard when private endpoints require Premium, included Azure Front Door you don't need for internal apps, and assumed free Microsoft-hosted build agents that can't reach a private cluster. Net effect on the platform-attributable figure is smaller than you might expect — dropping Front Door and reusing the workspace offsets much of what got added.
+</div>
+
+<div class="totals">
+  <div class="tc shared">
+    <div class="label">MLZ shared infrastructure</div>
+    <div class="amount" id="t-shared">$—</div>
+    <div class="sub">Hub firewall + existing workspace. Likely already in someone's budget.</div>
+  </div>
+  <div class="tc hl">
+    <div class="label">Platform adds (PAYG)</div>
+    <div class="amount" id="t-platform">$—</div>
+    <div class="sub">What this project actually costs incrementally</div>
+  </div>
+  <div class="tc">
+    <div class="label">Platform with 1-yr reservations</div>
+    <div class="amount" id="t-reserved">$—</div>
+    <div class="sub">~40% off node pool compute</div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="cg">
+    <label>Prod node size</label>
+    <select id="prod-vm" onchange="recalc()">
+      <option value="0.192" selected>D4s v3 — 4 vCPU / 16 GB</option>
+      <option value="0.096">D2s v3 — 2 vCPU / 8 GB</option>
+      <option value="0.384">D8s v3 — 8 vCPU / 32 GB</option>
+    </select>
+  </div>
+  <div class="cg">
+    <label>Prod nodes: <span class="rv" id="pc-v">3</span></label>
+    <input type="range" min="2" max="8" value="3" id="pc" oninput="recalc()">
+  </div>
+  <div class="cg">
+    <label>Non-prod nodes: <span class="rv" id="nc-v">3</span></label>
+    <input type="range" min="2" max="6" value="3" id="nc" oninput="recalc()">
+  </div>
+  <div class="cg">
+    <label>Log ingestion GB/day: <span class="rv" id="lg-v">10</span></label>
+    <input type="range" min="2" max="40" value="10" id="lg" oninput="recalc()">
+  </div>
+  <div class="cg toggle">
+    <input type="checkbox" id="appgw" onchange="recalc()">
+    <label for="appgw" style="cursor:pointer">Include App Gateway WAF (external apps)</label>
+  </div>
+  <div class="cg toggle">
+    <input type="checkbox" id="scaledown" onchange="recalc()">
+    <label for="scaledown" style="cursor:pointer">Scale non-prod down overnight</label>
+  </div>
+  <div class="note">Non-prod covers dev + staging on one cluster. Log ingestion is the single most volatile line — set filters before prod traffic.</div>
+</div>
+
+<div class="tbl">
+  <div class="th">
+    <div>Line item</div><div>Resource</div><div class="r">Unit</div><div class="r">Qty</div><div class="r">Monthly</div>
+  </div>
+
+  <div class="sh hubsec">MLZ Shared Infrastructure — already deployed, shown for completeness</div>
+  <div class="row">
+    <div><div class="nm">Azure Firewall Premium</div><div class="ds">MLZ's default SKU, because IDPS is what satisfies the SCCA VDSS requirement. Roughly $1.75/deployment-hour before any traffic, plus $0.016/GB processed. Standard drops this to about $912/mo if you don't need IDPS.</div><span class="badge b-shr">shared / pre-existing</span></div>
+    <div>Azure Firewall</div><div class="r">$1.75/hr</div><div class="r">730 hrs</div><div class="r cost">~$1,278</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Firewall data processing</div><div class="ds">$0.016/GB on everything routed through it. Internal-only apps keep this low; estimate assumes modest egress for package pulls, telemetry, and OS updates.</div><span class="badge b-shr">shared</span></div>
+    <div>Azure Firewall</div><div class="r">$0.016/GB</div><div class="r">~500 GB</div><div class="r cost">~$8</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Log Analytics workspace</div><div class="ds">The workspace itself is already provisioned by MLZ in the T1 operations spoke. No new workspace charge — you pay only for the volume you add, which appears in the platform section below.</div><span class="badge b-shr">shared / reuse</span></div>
+    <div>Azure Monitor</div><div class="r">—</div><div class="r">existing</div><div class="r cost" style="color:var(--green)">$0</div>
+  </div>
+  <div class="sub-row"><div>MLZ shared subtotal</div><div></div><div></div><div></div><div class="r" id="s-shared">~$1,286</div></div>
+
+  <div class="sh">Compute — AKS</div>
+  <div class="row">
+    <div><div class="nm">AKS control plane × 2</div><div class="ds">Standard tier at $0.10/hr each, for the non-prod and prod clusters. Standard is required for the API server SLA; don't run prod on Free tier.</div><span class="badge b-chg">changed: was 1 cluster</span></div>
+    <div>AKS</div><div class="r">$0.10/hr</div><div class="r">2 × 730 hrs</div><div class="r cost">$146</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Non-prod node pool</div><div class="ds" id="np-ds">Dev + staging namespaces on shared nodes. D2s v3 class. Scale down overnight for roughly half this cost.</div></div>
+    <div>Azure VMs (Linux)</div><div class="r">$0.096/hr</div><div class="r" id="np-q">3 × 730 hrs</div><div class="r cost" id="np-c">$210</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Prod node pool</div><div class="ds">Dedicated to the prod cluster. HPA enabled. Sized for your app count — increase as the portfolio grows.</div></div>
+    <div>Azure VMs (Linux)</div><div class="r" id="pp-u">$0.192/hr</div><div class="r" id="pp-q">3 × 730 hrs</div><div class="r cost" id="pp-c">$421</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">System node pools × 2</div><div class="ds">Two nodes per cluster running kube-system, the ingress controller, and the CSI driver. Small, but you need one set per cluster.</div><span class="badge b-new">new: second cluster</span></div>
+    <div>Azure VMs (Linux)</div><div class="r">$0.096/hr</div><div class="r">4 × 730 hrs</div><div class="r cost">$280</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Self-hosted build agents</div><div class="ds">VMSS agent pool in the T2 spoke. Microsoft-hosted agents cannot reach a private API server or private-endpoint ACR, so this isn't optional. Scales to zero when idle — cost tracks build volume.</div><span class="badge b-new">new — private topology</span></div>
+    <div>Azure VMSS</div><div class="r">variable</div><div class="r">~90 hrs/mo</div><div class="r cost">~$90</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Node OS disks</div><div class="ds">Premium SSD per node across both clusters. Roughly $10–19 per node depending on size.</div></div>
+    <div>Managed Disks</div><div class="r">~$14/node</div><div class="r" id="dk-q">~12 nodes</div><div class="r cost" id="dk-c">~$168</div>
+  </div>
+  <div class="sub-row"><div>Compute subtotal</div><div></div><div></div><div></div><div class="r" id="s-compute">—</div></div>
+
+  <div class="sh">Registry, Secrets &amp; Private Networking</div>
+  <div class="row">
+    <div><div class="nm">Azure Container Registry — Premium</div><div class="ds">Premium rather than Standard, because private endpoints are a Premium-only feature and a publicly reachable registry doesn't belong inside an SCCA boundary. Includes 500 GB storage and geo-replication capability.</div><span class="badge b-chg">changed: was Standard $20</span></div>
+    <div>ACR</div><div class="r">~$1.67/day</div><div class="r">1 registry</div><div class="r cost">~$50</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Private endpoints</div><div class="ds">ACR into two spokes, three Key Vaults, three App Config stores, plus the AKS private DNS links. Roughly $0.01/hr each plus data processing. Individually trivial, collectively real.</div><span class="badge b-new">new — MLZ requirement</span></div>
+    <div>Private Link</div><div class="r">~$7.30/ea</div><div class="r">~10 endpoints</div><div class="r cost">~$75</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Key Vault × 3</div><div class="ds">Dev, staging, prod. Billed per 10k operations at $0.03. Even heavy CSI mount traffic keeps this in the noise.</div></div>
+    <div>Key Vault</div><div class="r">$0.03/10k</div><div class="r">~500k ops</div><div class="r cost">~$5</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">App Configuration × 3</div><div class="ds">Standard tier at $1.20/day per store. Free tier exists but has no feature flags — and feature flags are what let incomplete work merge to trunk, which is load-bearing for MinimumCD. Worth the spend.</div></div>
+    <div>App Configuration</div><div class="r">$1.20/day</div><div class="r">3 stores</div><div class="r cost">$108</div>
+  </div>
+  <div class="sub-row"><div>Registry &amp; secrets subtotal</div><div></div><div></div><div></div><div class="r">~$238</div></div>
+
+  <div class="sh">Networking &amp; Ingress</div>
+  <div class="row">
+    <div><div class="nm">Internal load balancers</div><div class="ds">Standard LB per cluster fronting the internal NGINX ingress. No public IP, no WAF, no CDN. This is the default path for ~90% of your apps.</div><span class="badge b-chg">replaced Front Door</span></div>
+    <div>Load Balancer</div><div class="r">~$18/ea</div><div class="r">2 LBs</div><div class="r cost">~$36</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Private DNS zones</div><div class="ds">Zones for the app hostnames plus the AKS private cluster zones. $0.50/zone/month plus a small per-query charge.</div></div>
+    <div>Private DNS</div><div class="r">$0.50/zone</div><div class="r">~6 zones</div><div class="r cost">~$5</div>
+  </div>
+  <div class="row" id="appgw-row" style="display:none">
+    <div><div class="nm">App Gateway WAF v2</div><div class="ds">Only if you have externally-facing apps. About $0.443/gateway-hour plus a capacity-unit charge. One gateway serves multiple external apps via listeners, so this is per-gateway not per-app. Defer provisioning until the first external app actually exists.</div><span class="badge b-new">exception path only</span></div>
+    <div>App Gateway</div><div class="r">$0.443/hr</div><div class="r">1 gateway</div><div class="r cost">~$370</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Egress bandwidth</div><div class="ds">Internal-only apps generate very little internet egress. Most traffic stays in-region and in-VNet, which is free. This will be small.</div></div>
+    <div>Bandwidth</div><div class="r">$0.087/GB</div><div class="r">~20 GB</div><div class="r cost">~$2</div>
+  </div>
+  <div class="sub-row"><div>Networking subtotal</div><div></div><div></div><div></div><div class="r" id="s-net">~$43</div></div>
+
+  <div class="sh">Observability</div>
+  <div class="row">
+    <div><div class="nm">Log ingestion into MLZ workspace</div><div class="ds" id="lg-ds">Container Insights and app telemetry flowing into the existing T1 workspace at $2.30/GB beyond the free allowance. The workspace is free; the volume is not. Set ingestion filters and 30-day retention on day one.</div><span class="badge b-chg">changed: volume only</span></div>
+    <div>Log Analytics</div><div class="r">$2.30/GB</div><div class="r" id="lg-q">~10 GB/day</div><div class="r cost" id="lg-c">~$150</div>
+  </div>
+  <div class="row">
+    <div><div class="nm">Application Insights</div><div class="ds">Per-app telemetry, first 5 GB/mo free per resource. Small internal apps with modest traffic stay close to free.</div><span class="badge b-free">near-free at low volume</span></div>
+    <div>App Insights</div><div class="r">$2.30/GB</div><div class="r">~5 GB/mo</div><div class="r cost">~$10</div>
+  </div>
+  <div class="sub-row"><div>Observability subtotal</div><div></div><div></div><div></div><div class="r" id="s-obs">~$160</div></div>
+
+  <div class="tot-row">
+    <div>PLATFORM TOTAL (excludes MLZ shared)</div><div></div><div></div><div></div><div class="r" id="grand">—</div>
+  </div>
+</div>
+
+<div class="savings">
+  <div class="sv">
+    <h4>1-year reserved instances</h4>
+    <div class="amt" id="sv1">—</div>
+    <p>Roughly 40% off node pool VMs. Compute is the largest platform line, so this is the highest-leverage move. Commit after one or two months of stable usage, not on day one.</p>
+  </div>
+  <div class="sv">
+    <h4>Scale non-prod overnight</h4>
+    <div class="amt" id="sv2">—</div>
+    <p>Dev and staging run 10 hours a day, 5 days a week instead of 24/7. Azure Automation or a scheduled scale-down job. Toggle it above to see the effect.</p>
+  </div>
+  <div class="sv">
+    <h4>Firewall SKU right-sizing</h4>
+    <div class="amt">~$366/mo</div>
+    <p>Dropping the hub firewall from Premium to Standard saves roughly this much — but Premium's IDPS is what MLZ relies on for the SCCA VDSS control. This is a compliance decision, not a cost decision. Raise it with whoever owns the accreditation.</p>
+  </div>
+</div>
+
+<div class="notes">
+  <strong>How to read the two totals:</strong> the MLZ shared line is what the landing zone costs to exist, and in most organisations running MLZ it's already funded by whoever operates the hub. If your team is being charged back for it, add it. If the hub already exists for other workloads, your platform's real incremental cost is the platform total only.
+  <br><br>
+  <strong>Not included:</strong>
+  <ul>
+    <li>Databases — Azure SQL, PostgreSQL Flexible, or Cosmos DB, budgeted per app. Figure $50–200/mo each depending on tier, plus a private endpoint apiece.</li>
+    <li>Azure DevOps user licences — free to 5 users, then $6/user/mo.</li>
+    <li>Microsoft Defender for Containers — worth pricing separately; it's commonly required alongside an SCCA posture.</li>
+    <li>Backup, DR, and any Azure Policy remediation tasks MLZ triggers.</li>
+    <li>The engineering time to stand this up: realistically 4–8 weeks for the first cluster in an MLZ context, versus 2–4 weeks greenfield. The private networking is where the time goes.</li>
+  </ul>
+  <br>
+  <strong>Verify before you budget:</strong> these are US-region list prices assembled from public pricing pages and are directional. Rates move, and any Enterprise Agreement or MACC discount you have will change the picture materially. Run the final numbers through the Azure Pricing Calculator with your actual region and agreement before taking them to a finance conversation.
+</div>
+
+<script>
+const H=730;
+function recalc(){
+  const pRate=parseFloat(document.getElementById('prod-vm').value);
+  const pc=+document.getElementById('pc').value;
+  const nc=+document.getElementById('nc').value;
+  const lg=+document.getElementById('lg').value;
+  const gw=document.getElementById('appgw').checked;
+  const sd=document.getElementById('scaledown').checked;
+
+  document.getElementById('pc-v').textContent=pc;
+  document.getElementById('nc-v').textContent=nc;
+  document.getElementById('lg-v').textContent=lg;
+
+  const sdFactor = sd ? 0.32 : 1; // 10h x 5d ≈ 30% of 24/7
+  const npCost=Math.round(nc*0.096*H*sdFactor);
+  const ppCost=Math.round(pc*pRate*H);
+  const sysCost=280;
+  const agents=90;
+  const nodes=nc+pc+4;
+  const disks=Math.round(nodes*14);
+  const compute=146+npCost+ppCost+sysCost+agents+disks;
+
+  const regSec=50+75+5+108;
+  const net=36+5+2+(gw?370:0);
+  // Log Analytics: 5GB/day free allowance approximated
+  const lgCost=Math.max(0,Math.round((lg-5)*30*2.30));
+  const obs=lgCost+10;
+
+  const platform=compute+regSec+net+obs;
+  const shared=1278+8;
+  const nodeCompute=npCost+ppCost+sysCost;
+  const reserved=Math.round(platform-nodeCompute*0.40);
+
+  document.getElementById('np-q').textContent=nc+' × 730 hrs'+(sd?' (scaled)':'');
+  document.getElementById('np-c').textContent='$'+npCost;
+  document.getElementById('pp-u').textContent='$'+pRate.toFixed(3)+'/hr';
+  document.getElementById('pp-q').textContent=pc+' × 730 hrs';
+  document.getElementById('pp-c').textContent='$'+ppCost;
+  document.getElementById('dk-q').textContent='~'+nodes+' nodes';
+  document.getElementById('dk-c').textContent='~$'+disks;
+  document.getElementById('s-compute').textContent='$'+compute.toLocaleString();
+  document.getElementById('lg-q').textContent='~'+lg+' GB/day';
+  document.getElementById('lg-c').textContent='~$'+lgCost.toLocaleString();
+  document.getElementById('s-obs').textContent='~$'+obs.toLocaleString();
+  document.getElementById('s-net').textContent='~$'+net;
+  document.getElementById('s-shared').textContent='~$'+shared.toLocaleString();
+  document.getElementById('appgw-row').style.display=gw?'grid':'none';
+
+  document.getElementById('grand').textContent='~$'+platform.toLocaleString()+'/mo';
+  document.getElementById('t-shared').textContent='~$'+shared.toLocaleString();
+  document.getElementById('t-platform').textContent='~$'+platform.toLocaleString();
+  document.getElementById('t-reserved').textContent='~$'+reserved.toLocaleString();
+  document.getElementById('sv1').textContent='~$'+Math.round(nodeCompute*0.40)+'/mo';
+
+  const full=Math.round(nc*0.096*H);
+  document.getElementById('sv2').textContent='~$'+Math.round(full*0.68)+'/mo';
+}
+recalc();
+</script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Internal App Platform — MLZ / SCCA Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0d0d0f;--paper:#f5f2eb;--steel:#1a2332;--azure:#0078d4;--dev:#00b4a0;--staging:#f59e0b;--prod:#ef4444;--hub:#7c3aed;--accent:#e8e0d0;--rule:rgba(13,13,15,.12);--mono:'IBM Plex Mono',monospace;--serif:'Fraunces',serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--mono);min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:.5}
+  header{border-bottom:1px solid var(--rule);padding:2rem 3rem;display:flex;justify-content:space-between;align-items:flex-end}
+  .logo{font-family:var(--serif);font-size:1.1rem;font-weight:600;letter-spacing:-.02em}
+  .logo span{color:var(--azure)}
+  .meta{font-size:.62rem;color:rgba(13,13,15,.4);letter-spacing:.1em;text-transform:uppercase;text-align:right;line-height:1.8}
+  .hero{padding:3.5rem 3rem 2.5rem;max-width:900px}
+  .hero h1{font-family:var(--serif);font-size:clamp(2.2rem,4.5vw,3.6rem);font-weight:900;line-height:1.05;letter-spacing:-.03em;margin-bottom:1rem}
+  .hero h1 em{font-style:italic;font-weight:300;color:var(--azure)}
+  .hero p{font-size:.75rem;color:rgba(13,13,15,.55);line-height:1.9;max-width:620px}
+  .hero a{color:var(--azure);text-decoration:none;border-bottom:1px solid var(--azure)}
+  .banner{margin:0 3rem 2rem;border:1px solid var(--hub);background:rgba(124,58,237,.06);padding:1.2rem 1.5rem;font-size:.7rem;line-height:1.8;color:rgba(13,13,15,.6)}
+  .banner strong{color:var(--hub)}
+  .tabs{display:flex;border-bottom:1px solid var(--rule);padding:0 3rem;overflow-x:auto}
+  .tab{padding:.9rem 1.4rem;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;border-bottom:2px solid transparent;white-space:nowrap;color:rgba(13,13,15,.45);background:none;font-family:var(--mono);transition:all .2s}
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--azure);border-bottom-color:var(--azure)}
+  .panel{display:none;padding:3rem;animation:fade .4s ease both}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .section-title{font-family:var(--serif);font-size:1.4rem;font-weight:600;letter-spacing:-.02em;margin-bottom:.4rem}
+  .section-sub{font-size:.7rem;color:rgba(13,13,15,.45);margin-bottom:2rem;line-height:1.8;max-width:720px}
+  .tier-stack{border:1px solid var(--rule);margin-bottom:3rem}
+  .tier{display:grid;grid-template-columns:190px 1fr;border-bottom:1px solid var(--rule)}
+  .tier:last-child{border-bottom:none}
+  .tier-label{background:var(--steel);color:rgba(255,255,255,.75);padding:1.3rem 1.2rem;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;line-height:1.7}
+  .tier-label .tier-num{font-family:var(--serif);font-size:1.3rem;font-weight:900;color:#fff;display:block;margin-bottom:.2rem;letter-spacing:-.02em}
+  .tier-label.hub-label{background:var(--hub)}
+  .tier-body{padding:1.3rem 1.6rem;font-size:.72rem;line-height:1.8}
+  .tier-body strong{display:block;margin-bottom:.3rem}
+  .tier-body span{color:rgba(13,13,15,.55);font-size:.67rem}
+  .tier-body.ours{background:rgba(0,120,212,.05);border-left:3px solid var(--azure)}
+  .yours-tag,.mlz-tag{display:inline-block;font-size:.54rem;padding:2px 7px;letter-spacing:.06em;text-transform:uppercase;margin-left:.5rem;vertical-align:middle}
+  .yours-tag{border:1px solid var(--azure);color:var(--azure)}
+  .mlz-tag{border:1px solid var(--hub);color:var(--hub)}
+  .arch-grid{background:var(--rule);border:1px solid var(--rule);margin-bottom:3rem}
+  .arch-row{display:grid;grid-template-columns:150px 1fr 1fr 1fr;gap:1px;background:var(--rule)}
+  .arch-label{background:var(--steel);color:rgba(255,255,255,.7);padding:1.2rem 1rem;font-size:.57rem;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center}
+  .arch-cell{background:var(--paper);padding:1.2rem 1.4rem;font-size:.7rem;line-height:1.7}
+  .arch-cell strong{display:block;font-size:.71rem;margin-bottom:.3rem}
+  .arch-cell span{color:rgba(13,13,15,.55);font-size:.65rem}
+  .arch-cell.wide{grid-column:span 3}
+  .env-head{background:var(--paper);padding:1.2rem 1.4rem;display:flex;align-items:center;gap:.5rem}
+  .env-head strong{font-size:.67rem;letter-spacing:.06em;text-transform:uppercase}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .t-dev{border-top:3px solid var(--dev)}.t-stg{border-top:3px solid var(--staging)}.t-prd{border-top:3px solid var(--prod)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-bottom:2.5rem}
+  .card{background:var(--paper);padding:1.7rem;transition:background .2s}
+  .card:hover{background:var(--accent)}
+  .card .icon{font-size:1.3rem;margin-bottom:.7rem}
+  .card h3{font-family:var(--serif);font-size:1rem;font-weight:600;margin-bottom:.3rem;letter-spacing:-.02em}
+  .card .sub{font-size:.59rem;color:var(--azure);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.7rem;font-weight:500}
+  .card .sub.hubc{color:var(--hub)}
+  .card p{font-size:.68rem;color:rgba(13,13,15,.55);line-height:1.8}
+  code{background:var(--accent);padding:1px 4px;font-size:.92em}
+  .pipeline{display:flex;overflow-x:auto;border:1px solid var(--rule);margin-bottom:2rem}
+  .stage{flex:1;min-width:150px;padding:1.4rem;border-right:1px solid var(--rule)}
+  .stage:last-child{border-right:none}
+  .stage .num{font-size:.53rem;color:var(--azure);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem}
+  .stage h4{font-size:.74rem;font-weight:600;margin-bottom:.5rem}
+  .stage ul{list-style:none;font-size:.62rem;color:rgba(13,13,15,.55);line-height:1.9}
+  .stage ul li::before{content:'— ';color:var(--azure)}
+  .code{background:var(--steel);color:#a8d8f0;padding:1.6rem 1.8rem;font-size:.67rem;line-height:1.9;overflow-x:auto;margin-bottom:1.2rem;position:relative;white-space:pre}
+  .code .c{color:#5a7a8a}.code .k{color:#79c0ff}.code .v{color:#a5d6a7}.code .w{color:#ffab70}
+  .code .lbl{position:absolute;top:.5rem;right:1rem;font-size:.53rem;letter-spacing:.1em;text-transform:uppercase;color:#5a7a8a}
+  .code code{background:none;padding:0}
+  .checklist{border:1px solid var(--rule)}
+  .cs{border-bottom:1px solid var(--rule)}
+  .cs:last-child{border-bottom:none}
+  .ch{padding:1rem 1.5rem;background:var(--accent);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:rgba(13,13,15,.6)}
+  .ci{display:flex;align-items:flex-start;gap:1rem;padding:.9rem 1.5rem;border-bottom:1px solid var(--rule);font-size:.71rem;line-height:1.7;cursor:pointer;transition:background .15s}
+  .ci:last-child{border-bottom:none}
+  .ci:hover{background:var(--accent)}
+  .ci input{margin-top:3px;accent-color:var(--azure);width:14px;height:14px;flex-shrink:0;cursor:pointer}
+  .ci label{cursor:pointer;flex:1}
+  .ci.done label{text-decoration:line-through;color:rgba(13,13,15,.3)}
+  .tag{font-size:.53rem;padding:2px 8px;border:1px solid currentColor;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+  .t-az{color:var(--azure)}.t-dv{color:var(--dev)}.t-op{color:var(--staging)}.t-mlz{color:var(--hub)}
+  .decisions{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-bottom:2rem}
+  .dec{background:var(--paper);padding:1.7rem}
+  .dec h4{font-size:.59rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(13,13,15,.4);margin-bottom:.4rem}
+  .dec .choice{font-family:var(--serif);font-size:1.05rem;font-weight:600;color:var(--azure);margin-bottom:.5rem;letter-spacing:-.02em}
+  .dec .why{font-size:.67rem;color:rgba(13,13,15,.55);line-height:1.8}
+  .dec .alt{font-size:.61rem;color:rgba(13,13,15,.38);margin-top:.7rem;font-style:italic;line-height:1.7}
+  @media(max-width:700px){header,.hero,.tabs,.panel,.banner{padding-left:1.5rem;padding-right:1.5rem;margin-left:0;margin-right:0}.arch-row{grid-template-columns:1fr}.tier{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">internal<span>.</span>platform</div>
+  <div class="meta">Azure Commercial · Mission Landing Zone (SCCA)<br>C# · React · Angular · Python · Internal-first</div>
+</header>
+
+<div class="hero">
+  <h1>Platform<br><em>on Mission LZ</em></h1>
+  <p>An internal application platform that lands inside your existing Mission Landing Zone hub-and-spoke topology, built on the principles of <a href="https://minimumcd.org" target="_blank">MinimumCD.org</a>. Internal-only by default; public exposure is an explicit, exceptional path.</p>
+</div>
+
+<div class="banner">
+  <strong>What changed in this revision:</strong> the platform is no longer a standalone greenfield design. It is scoped as workload tiers inside MLZ, which means forced-tunnel egress through the hub firewall, private endpoints on every PaaS service, a private AKS API server, self-hosted build agents, and internal load balancer ingress. Azure Front Door has been removed from the default path and replaced with an internal ingress model plus a documented external exception.
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="show(event,'mlz')">MLZ Placement</button>
+  <button class="tab" onclick="show(event,'overview')">Environments</button>
+  <button class="tab" onclick="show(event,'network')">Networking &amp; Ingress</button>
+  <button class="tab" onclick="show(event,'mcd')">MinimumCD</button>
+  <button class="tab" onclick="show(event,'cicd')">CI/CD</button>
+  <button class="tab" onclick="show(event,'newapp')">New App</button>
+  <button class="tab" onclick="show(event,'checklist')">Setup Checklist</button>
+</div>
+
+<div id="mlz" class="panel active">
+  <div class="section-title">Where the Platform Lives in MLZ</div>
+  <p class="section-sub">Mission Landing Zone deploys hub-and-spoke networking separated by tiers: T0 for identity and authorization, T1 for infrastructure operations, T2 for DevSecOps and shared services, and multiple T3 spokes for workloads. Your platform is not a new landing zone — it slots into T2 and T3. Purple below already exists; blue is what you build.</p>
+
+  <div class="tier-stack">
+    <div class="tier">
+      <div class="tier-label hub-label"><span class="tier-num">HUB</span>Network Hub</div>
+      <div class="tier-body">
+        <strong>Azure Firewall Premium <span class="mlz-tag">MLZ deploys this</span></strong>
+        <span>MLZ configures the firewall as the default route for every tier — a <code>0.0.0.0/0</code> UDR pointing at the firewall's private IP. Premium is the MLZ default because its IDPS capability is what satisfies the SCCA VDSS requirement; Standard is selectable via the <code>firewallSkuTier</code> parameter if you don't need IDPS. Your AKS egress design has to be built around this, not alongside it.</span>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-label"><span class="tier-num">T0</span>Identity &amp; Authorization</div>
+      <div class="tier-body">
+        <strong>Entra ID + optional ADDS <span class="mlz-tag">exists</span></strong>
+        <span>App registrations live in the existing Entra tenant. MLZ optionally deploys domain controllers here if <code>deployActiveDirectoryDomainServices</code> was enabled. Nothing for the platform to build — you consume it.</span>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-label"><span class="tier-num">T1</span>Infrastructure Operations</div>
+      <div class="tier-body">
+        <strong>Log Analytics Workspace <span class="mlz-tag">reuse, don't rebuild</span></strong>
+        <span>MLZ already stands up a central Log Analytics workspace in the operations spoke, and its default firewall rule collection explicitly permits spoke traffic to reach it on port 443. Do not create a second workspace. Point Container Insights and Application Insights at the existing one. Your cost here is ingestion volume, not the workspace itself.</span>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-label"><span class="tier-num">T2</span>DevSecOps &amp; Shared Services</div>
+      <div class="tier-body ours">
+        <strong>Platform shared services <span class="yours-tag">you build</span></strong>
+        <span>Azure Container Registry (Premium, private endpoint), the self-hosted Azure DevOps agent pool, the platform Bicep/Helm repo, and the shared App Configuration stores. MLZ literally names this tier "DevSecOps," so it is exactly where the SCCA design expects your pipeline infrastructure to sit.</span>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-label"><span class="tier-num">T3</span>Workload — Non-Prod</div>
+      <div class="tier-body ours">
+        <strong>AKS cluster: dev + staging namespaces <span class="yours-tag">you build</span></strong>
+        <span>One private AKS cluster serving both dev and staging. Separate spoke from production, so a non-prod mistake cannot reach prod data or prod identity. Key Vaults for dev and staging plus their private endpoints live here.</span>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-label"><span class="tier-num">T3</span>Workload — Production</div>
+      <div class="tier-body ours">
+        <strong>AKS cluster: prod namespace <span class="yours-tag">you build</span></strong>
+        <span>Dedicated spoke, typically a dedicated subscription, and a dedicated private AKS cluster. The prod Key Vault is reachable only by this cluster's workload identity. This separation is what lets you have both a genuine rollback capability and a staging environment you can trust.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Single Cluster or Two?</div>
+  <p class="section-sub">My earlier design put dev, staging, and prod in one cluster as three namespaces. Under MLZ that's the wrong call, and it's worth being explicit about why the recommendation changed rather than quietly swapping it.</p>
+
+  <div class="decisions">
+    <div class="dec">
+      <h4>Previous recommendation</h4>
+      <div class="choice" style="color:rgba(13,13,15,.35)">One cluster, three namespaces</div>
+      <div class="why">Cheaper and simpler. Namespace RBAC gives logical isolation. Perfectly reasonable for a standalone commercial-Azure deployment with no compliance boundary in play.</div>
+      <div class="alt">Why it no longer fits: MLZ expects workloads in separate T3 spokes, usually separate subscriptions. A single cluster spanning what should be two isolation boundaries undercuts the separation-of-duties model SCCA is built on, and it puts every dev experiment inside the prod blast radius.</div>
+    </div>
+    <div class="dec">
+      <h4>Revised recommendation</h4>
+      <div class="choice">Two clusters, two T3 spokes</div>
+      <div class="why">One non-prod cluster hosting dev and staging namespaces, one prod cluster, in separate spokes. Costs roughly one extra control plane (~$73/mo) plus a small system node pool. In exchange: a real isolation boundary, an independent upgrade cadence so AKS upgrades get tested in non-prod first, and a separation of duties that maps cleanly onto MLZ's tier model.</div>
+      <div class="alt">Dev and staging share a cluster because they share a trust level. Staging still mirrors prod configuration — it just doesn't need its own subscription to do that.</div>
+    </div>
+  </div>
+</div>
+
+<div id="overview" class="panel">
+  <div class="section-title">Environment Matrix</div>
+  <p class="section-sub">Two clusters, three environments. The pipeline is the only path into any of them.</p>
+
+  <div class="arch-grid">
+    <div class="arch-row">
+      <div class="arch-label">Layer</div>
+      <div class="env-head t-dev"><div class="dot" style="background:var(--dev)"></div><strong>Dev</strong></div>
+      <div class="env-head t-stg"><div class="dot" style="background:var(--staging)"></div><strong>Staging</strong></div>
+      <div class="env-head t-prd"><div class="dot" style="background:var(--prod)"></div><strong>Production</strong></div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-label">Spoke / Sub</div>
+      <div class="arch-cell t-dev"><strong>T3 Non-Prod spoke</strong><span>Shared with staging. Separate subscription from prod.</span></div>
+      <div class="arch-cell t-stg"><strong>T3 Non-Prod spoke</strong><span>Same spoke as dev; separate namespace and Key Vault.</span></div>
+      <div class="arch-cell t-prd"><strong>T3 Production spoke</strong><span>Dedicated subscription and RBAC scope.</span></div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-label">Compute</div>
+      <div class="arch-cell t-dev"><strong>AKS (private) — ns: dev</strong><span>Auto-deploys on merge to trunk. Red build stops all deployment. Small node pool, scaled down outside working hours.</span></div>
+      <div class="arch-cell t-stg"><strong>AKS (private) — ns: staging</strong><span>Same cluster as dev but prod-mirrored config: same Helm values shape, same secret paths, same ingress class. Scaled down, not simplified.</span></div>
+      <div class="arch-cell t-prd"><strong>AKS (private) — ns: prod</strong><span>Dedicated cluster. Runs the identical image digest that passed staging. Manual approval gate. HPA enabled.</span></div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-label">Egress</div>
+      <div class="arch-cell wide"><strong>All outbound traffic forced through the MLZ hub firewall <span class="mlz-tag">MLZ constraint</span></strong><span>AKS must be created with <code>outboundType: userDefinedRouting</code>. The AKS default (<code>loadBalancer</code>) provisions its own public egress path and will fight the MLZ <code>0.0.0.0/0</code> route — this is the single most common way an AKS-on-MLZ deployment fails. Firewall rules must permit the AKS required endpoints; the <code>AzureKubernetesService</code> FQDN tag covers most of them.</span></div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-label">Ingress</div>
+      <div class="arch-cell t-dev"><strong>Internal LB + private DNS</strong><span>*.dev.apps.internal.yourco.com resolves to a private IP, reachable from the corporate network.</span></div>
+      <div class="arch-cell t-stg"><strong>Internal LB + private DNS</strong><span>*.staging.apps.internal.yourco.com — identical ingress mechanism to prod.</span></div>
+      <div class="arch-cell t-prd"><strong>Internal LB + private DNS</strong><span>*.apps.internal.yourco.com. No public IP. External exposure is a separate per-app decision.</span></div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-label">Auth / SSO</div>
+      <div class="arch-cell t-dev"><strong>Entra ID (T0)</strong><span>Dev app registration, dev group membership only.</span></div>
+      <div class="arch-cell t-stg"><strong>Entra ID (T0)</strong><span>Staging app registration, QA and testers.</span></div>
+      <div class="arch-cell t-prd"><strong>Entra ID (T0)</strong><span>Prod app registration, OIDC via the existing corporate tenant.</span></div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-label">Secrets</div>
+      <div class="arch-cell t-dev"><strong>Key Vault (dev) + private endpoint</strong><span>Public network access disabled. CSI driver mounts secrets into pods.</span></div>
+      <div class="arch-cell t-stg"><strong>Key Vault (staging) + private endpoint</strong><span>Same structure as prod so the config shape never differs between them.</span></div>
+      <div class="arch-cell t-prd"><strong>Key Vault (prod) + private endpoint</strong><span>Reachable only by the prod cluster's workload identity.</span></div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-label">Registry</div>
+      <div class="arch-cell wide"><strong>Azure Container Registry — Premium SKU in T2, private endpoints into both spokes</strong><span>Premium is required rather than preferred: private endpoints are a Premium-only feature, and a registry reachable from the public internet is a non-starter inside an SCCA boundary. Images are built once and promoted by digest, never rebuilt per environment. Tag immutability enabled.</span></div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-label">Observability</div>
+      <div class="arch-cell wide"><strong>Existing MLZ Log Analytics workspace in T1 <span class="mlz-tag">reuse</span></strong><span>Container Insights and Application Insights both target the workspace MLZ already provisioned in the operations spoke, and MLZ's default firewall rules already permit spoke-to-workspace traffic. Your cost is ingestion volume only.</span></div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-label">CI/CD</div>
+      <div class="arch-cell wide"><strong>Azure DevOps + self-hosted agents in T2 — the only path to deploy</strong><span>Microsoft-hosted agents cannot reach a private AKS API server or a private-endpoint ACR. You need a self-hosted agent pool (VM scale set agents) in the T2 DevSecOps spoke. This is an unavoidable cost of the private topology, and it's the second most common MLZ + AKS surprise after egress.</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">Key Design Decisions</div>
+  <p class="section-sub">Revised for the MLZ context.</p>
+
+  <div class="decisions">
+    <div class="dec">
+      <h4>Orchestration</h4>
+      <div class="choice">AKS — private clusters</div>
+      <div class="why">Still the right fit for a mixed C#/Python/JS portfolio, and MLZ explicitly names containerized applications as a target workload. Private API server, <code>userDefinedRouting</code> egress, Azure CNI, and workload identity all become mandatory rather than optional.</div>
+      <div class="alt">Alt: Azure Container Apps — simpler, but private networking and forced-tunnel support is more constrained.</div>
+    </div>
+    <div class="dec">
+      <h4>Ingress — the 90%</h4>
+      <div class="choice">Internal load balancer</div>
+      <div class="why">Since nearly all apps are internal-only, the default is an internal-facing NGINX controller behind an ILB with a private DNS zone. No public IP, no WAF, no Front Door in the default path. Cheaper, and a far easier story in an accreditation conversation.</div>
+      <div class="alt">Removed from the previous design: Azure Front Door as the standard prod ingress.</div>
+    </div>
+    <div class="dec">
+      <h4>Ingress — the 10%</h4>
+      <div class="choice">App Gateway WAF v2, per exception</div>
+      <div class="why">For the rare externally-facing app, an Application Gateway with WAF v2 fronts a private backend. Inspection stays inside your own VNet and boundary rather than at a global edge, which is a much simpler SCCA story than Front Door. Treat each exposure as a reviewed exception with a named owner.</div>
+      <div class="alt">Alt: Front Door Premium with Private Link origin — viable, and worth it only if you genuinely need global edge distribution.</div>
+    </div>
+    <div class="dec">
+      <h4>Build agents</h4>
+      <div class="choice">Self-hosted VMSS agents in T2</div>
+      <div class="why">A private API server and private-endpoint ACR are unreachable from Microsoft-hosted agents. VMSS-backed pools scale to zero when idle, keeping cost modest, and they inherit the hub firewall egress path like everything else in the estate.</div>
+      <div class="alt">Budget roughly $60–120/mo depending on build volume and how aggressively you scale down.</div>
+    </div>
+    <div class="dec">
+      <h4>Secrets</h4>
+      <div class="choice">Key Vault + CSI + Workload Identity</div>
+      <div class="why">Unchanged in shape, with two additions: public network access disabled on every vault, and a private endpoint per vault per spoke. Workload Identity federation means there are no service principal secrets to rotate anywhere in the system.</div>
+      <div class="alt">Private endpoints add roughly $7/mo each plus data processing — individually small, collectively a real line.</div>
+    </div>
+    <div class="dec">
+      <h4>Policy compliance</h4>
+      <div class="choice">Inherit MLZ's Azure Policy</div>
+      <div class="why">MLZ applies Azure Policy initiatives including a NIST 800-53 audit set, and your platform Bicep will be evaluated against them. Run <code>what-if</code> deployments against the policy assignments early — discovering a deny policy after the Helm charts are written makes for a bad week.</div>
+      <div class="alt">MLZ's own docs are careful to say the technologies in use can be compliant, not that your workloads are. App-level compliance stays your work.</div>
+    </div>
+  </div>
+</div>
+
+<div id="network" class="panel">
+  <div class="section-title">Networking &amp; Ingress</div>
+  <p class="section-sub">The area that changed most from the original design. Internal-first by default, with a deliberate documented path for the exceptions.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="icon">🔒</div><h3>Forced Tunnel Egress</h3><div class="sub hubc">MLZ constraint — non-negotiable</div>
+      <p>MLZ sets a <code>0.0.0.0/0</code> route on every tier pointing at the hub firewall as a virtual appliance. Create AKS with <code>outboundType: userDefinedRouting</code> so it doesn't provision a competing public egress path. Then allow the AKS required endpoints on the firewall — the <code>AzureKubernetesService</code> FQDN tag covers the bulk, plus rules for ACR, Entra endpoints, and any package feeds your builds need.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔑</div><h3>Private API Server</h3><div class="sub">AKS private cluster</div>
+      <p>The Kubernetes API server gets a private IP and a private DNS zone. Developers reach it through the corporate network, never from the internet. This is what makes "the pipeline is the only deployment path" enforceable at the network layer rather than by policy alone.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🏠</div><h3>Internal Ingress — default</h3><div class="sub">90% of your apps</div>
+      <p>NGINX ingress with the internal load balancer annotation, backed by a private DNS zone linked to each spoke VNet. Apps resolve to private IPs, reachable over your existing ExpressRoute or VPN. cert-manager issues certificates from your internal CA. No public surface at all.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🌐</div><h3>External Exception Path</h3><div class="sub">10% — reviewed case by case</div>
+      <p>Application Gateway with WAF v2 in a DMZ subnet, backend pool pointing at the internal ingress. Roughly $0.443 per gateway-hour plus a capacity-unit charge — call it $330–420/mo for the first gateway. One gateway hosts multiple external apps via listeners, so this is a per-gateway cost, not per-app.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔌</div><h3>Private Endpoints Everywhere</h3><div class="sub">ACR, Key Vault, App Config</div>
+      <p>Every PaaS dependency gets a private endpoint with public network access disabled. Budget roughly $7/mo per endpoint plus data processing. With one ACR, three Key Vaults, and three App Config stores across two spokes you're looking at eight to ten endpoints.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🚪</div><h3>Default Outbound Access is Gone</h3><div class="sub">Changed 31 March 2026</div>
+      <p>Microsoft retired implicit default outbound access. Every workload now needs an explicit egress path — firewall, NAT Gateway, or load balancer outbound rules. Under MLZ the hub firewall is that path, so you're covered by design, but it has to be a conscious configuration rather than something inherited for free.</p>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-bottom:.4rem">AKS Cluster Creation — MLZ-safe parameters</div>
+  <p class="section-sub">The flags that matter. Getting <code>outbound-type</code> wrong is the classic failure mode.</p>
+
+  <div class="code"><span class="lbl">az cli</span><span class="c"># MLZ-critical flags marked. Everything else is normal AKS.</span>
+az aks create \
+  --resource-group <span class="v">rg-platform-prod</span> \
+  --name <span class="v">aks-platform-prod</span> \
+  --tier <span class="v">standard</span> \
+  <span class="w">--outbound-type userDefinedRouting</span> \    <span class="c"># MUST be UDR, not loadBalancer</span>
+  <span class="w">--enable-private-cluster</span> \                <span class="c"># no public API server</span>
+  --network-plugin <span class="v">azure</span> \
+  --vnet-subnet-id <span class="v">$SPOKE_SUBNET_ID</span> \        <span class="c"># existing MLZ T3 spoke subnet</span>
+  --enable-oidc-issuer \
+  --enable-workload-identity \
+  --enable-addons <span class="v">azure-keyvault-secrets-provider,monitoring</span> \
+  --workspace-resource-id <span class="v">$MLZ_T1_LAW_ID</span> \   <span class="c"># reuse MLZ workspace</span>
+  --attach-acr <span class="v">$ACR_ID</span> \
+  --enable-cluster-autoscaler --min-count <span class="v">2</span> --max-count <span class="v">6</span></div>
+
+  <div class="code"><span class="lbl">helm values — internal ingress</span><span class="c"># NGINX ingress controller, internal-facing by default</span>
+<span class="k">controller</span>:
+  <span class="k">service</span>:
+    <span class="k">annotations</span>:
+      <span class="k">service.beta.kubernetes.io/azure-load-balancer-internal</span>: <span class="v">"true"</span>
+    <span class="k">externalTrafficPolicy</span>: <span class="v">Local</span>
+  <span class="k">ingressClassResource</span>:
+    <span class="k">name</span>: <span class="v">nginx-internal</span>
+    <span class="k">default</span>: <span class="v">true</span>            <span class="c"># internal is the DEFAULT class</span>
+
+<span class="c"># Apps get no public exposure unless they explicitly opt into the</span>
+<span class="c"># reviewed external path. Default-deny by construction.</span></div>
+</div>
+
+<div id="mcd" class="panel">
+  <div class="section-title">MinimumCD Principles</div>
+  <p class="section-sub">The principles from <a href="https://minimumcd.org" target="_blank" style="color:var(--azure);text-decoration:none;border-bottom:1px solid var(--azure)">minimumcd.org</a> haven't changed. What changed is that MLZ makes some of them easier to enforce and others harder to achieve — worth knowing which is which before you start.</p>
+
+  <div class="cards">
+    <div class="card"><div class="icon">🌿</div><h3>Trunk-Based Development</h3><div class="sub">Required for CI</div>
+      <p>Everyone integrates to <code>main</code> at least daily. Short-lived branches merged within a day or two. Branch policies enforce it. Unaffected by MLZ — this is a team practice, not an infrastructure one.</p></div>
+    <div class="card"><div class="icon">🔴</div><h3>Red Build = Full Stop</h3><div class="sub">CI discipline</div>
+      <p>A failed pipeline blocks the deployment gate to every environment, and fixing it is the highest priority work on the board. No bypasses. Enforced in the shared pipeline template so individual apps cannot opt out.</p></div>
+    <div class="card"><div class="icon">📦</div><h3>Immutable Artifacts</h3><div class="sub">Build once, promote by digest</div>
+      <p>Images built exactly once, tagged by git SHA, with ACR tag immutability enabled. Promote by digest rather than tag so there's no ambiguity about what shipped. The artifact that passed staging is what runs in prod.</p></div>
+    <div class="card"><div class="icon">🚦</div><h3>Pipeline is the Only Path</h3><div class="sub" style="color:var(--dev)">MLZ makes this EASIER</div>
+      <p>With a private API server, developers physically cannot <code>kubectl apply</code> from a laptop over the internet. Combine that with namespace RBAC scoped to the pipeline's workload identity and the constraint is enforced by network topology rather than by policy documents and good intentions.</p></div>
+    <div class="card"><div class="icon">🪞</div><h3>Production-Like Staging</h3><div class="sub" style="color:var(--staging)">MLZ makes this HARDER</div>
+      <p>Staging now sits in a different spoke and subscription from prod, with different firewall rule scope and different private endpoints. Real parity takes deliberate work: the same Bicep modules parameterised per environment, the same secret names, the same ingress class, the same policy assignments. Watch the networking layer specifically — that's where the differences hide.</p></div>
+    <div class="card"><div class="icon">⏪</div><h3>Rollback on Demand</h3><div class="sub">Verified, not assumed</div>
+      <p><code>helm rollback</code> against an immutable prior digest. Because promotion is by digest, the previous version is guaranteed still to exist in ACR. Test this during platform setup and re-test quarterly — an untested rollback is a hope, not a capability.</p></div>
+    <div class="card"><div class="icon">🧪</div><h3>Automated Quality Gates</h3><div class="sub">Beyond minimum</div>
+      <p>The pipeline decides releasability. Tests, coverage thresholds, linting, and image vulnerability scanning run automatically, and a failure is a failed build. Manual approval on the prod gate is a business decision, not a quality check.</p></div>
+    <div class="card"><div class="icon">✂️</div><h3>Small, Frequent Changes</h3><div class="sub">Beyond minimum</div>
+      <p>Stories decomposed to one or two days. Feature flags via App Configuration let incomplete work merge to trunk without reaching users. Small changes are easier to review, test, and reverse.</p></div>
+    <div class="card"><div class="icon">📈</div><h3>Improve the Pipeline Itself</h3><div class="sub">Beyond minimum</div>
+      <p>Track build duration, deployment frequency, lead time, and MTTR. In a private topology build times get worse before they get better — self-hosted agent cold starts are a real tax. Treat that as a bug to fix, not a fact of life.</p></div>
+  </div>
+</div>
+
+<div id="cicd" class="panel">
+  <div class="section-title">CI/CD Pipeline</div>
+  <p class="section-sub">Same shape as before, running on self-hosted agents inside the T2 spoke because private endpoints demand it.</p>
+
+  <div class="pipeline">
+    <div class="stage"><div class="num">01</div><h4>Trunk Integration</h4><ul><li>Short-lived branch → PR</li><li>Merged to main daily</li><li>1 reviewer max</li><li>Triggers on merge</li></ul></div>
+    <div class="stage"><div class="num">02</div><h4>Build &amp; Test</h4><ul><li>Self-hosted agent (T2)</li><li>Unit tests must pass</li><li>Coverage gate</li><li>Lint / SAST</li><li>🔴 Fail = full stop</li></ul></div>
+    <div class="stage"><div class="num">03</div><h4>Immutable Artifact</h4><ul><li>Build once, tag by SHA</li><li>Push via private endpoint</li><li>Tag immutability on</li><li>Vulnerability scan</li></ul></div>
+    <div class="stage"><div class="num">04</div><h4>Deploy Dev</h4><ul><li>Auto on green build</li><li>Non-prod cluster</li><li>Smoke tests</li><li>🔴 Fail = full stop</li></ul></div>
+    <div class="stage"><div class="num">05</div><h4>Deploy Staging</h4><ul><li>Auto after dev passes</li><li>Same cluster, own ns</li><li>Integration tests</li><li>🔴 Fail = full stop</li></ul></div>
+    <div class="stage"><div class="num">06</div><h4>Promote to Prod</h4><ul><li>Same digest, prod cluster</li><li>Manual approval</li><li>Rolling update</li><li>Auto-rollback on fail</li></ul></div>
+  </div>
+
+  <div class="code"><span class="lbl">azure-pipelines.yml</span><span class="c"># All an app team writes. MLZ constraints live in the shared template.</span>
+<span class="k">trigger</span>:
+  <span class="k">branches</span>: { <span class="k">include</span>: [<span class="v">main</span>] }     <span class="c"># trunk only</span>
+
+<span class="k">extends</span>:
+  <span class="k">template</span>: <span class="v">platform/pipeline-template.yml@platform-repo</span>
+  <span class="k">parameters</span>:
+    <span class="k">appName</span>: <span class="v">expense-tracker</span>
+    <span class="k">appType</span>: <span class="v">dotnet</span>                <span class="c"># dotnet | react | angular | python</span>
+    <span class="k">agentPool</span>: <span class="v">platform-vmss-agents</span>    <span class="c"># self-hosted, T2 spoke</span>
+    <span class="k">exposure</span>: <span class="v">internal</span>              <span class="c"># internal | external (external needs approval)</span>
+    <span class="k">environments</span>:
+      <span class="k">dev</span>:     { <span class="k">cluster</span>: <span class="v">aks-platform-nonprod</span>, <span class="k">autoDeploy</span>: <span class="v">true</span> }
+      <span class="k">staging</span>: { <span class="k">cluster</span>: <span class="v">aks-platform-nonprod</span>, <span class="k">autoDeploy</span>: <span class="v">true</span> }
+      <span class="k">prod</span>:    { <span class="k">cluster</span>: <span class="v">aks-platform-prod</span>,
+                <span class="k">requireApproval</span>: <span class="v">true</span>, <span class="k">approvers</span>: [<span class="v">platform-team</span>] }
+                <span class="c"># promotes the exact digest that passed staging</span></div>
+
+  <div class="code"><span class="lbl">values.prod.yaml</span><span class="k">replicaCount</span>: <span class="v">3</span>
+<span class="k">image</span>:
+  <span class="k">digest</span>: <span class="v">sha256:abc123...</span>      <span class="c"># promoted by digest, never by tag</span>
+<span class="k">ingress</span>:
+  <span class="k">className</span>: <span class="v">nginx-internal</span>     <span class="c"># internal by default</span>
+  <span class="k">host</span>: <span class="v">expense-tracker.apps.internal.yourco.com</span>
+<span class="k">keyVault</span>:
+  <span class="k">name</span>: <span class="v">kv-platform-prod</span>
+  <span class="k">useWorkloadIdentity</span>: <span class="v">true</span>     <span class="c"># no stored credentials anywhere</span>
+  <span class="k">secrets</span>: [<span class="v">db-connection-string</span>, <span class="v">api-key-xyz</span>]</div>
+</div>
+
+<div id="newapp" class="panel">
+  <div class="section-title">New App Playbook</div>
+  <p class="section-sub">Roughly 30–60 minutes per app once the platform exists. The extra steps versus a plain-Azure platform are the private DNS record and the exposure decision.</p>
+
+  <div class="checklist">
+    <div class="cs">
+      <div class="ch">Step 1 — Scaffold</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Copy the stack template from platform-repo (dotnet / react / angular / python)</label><span class="tag t-dv">dev</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Rename the app, update the project file, confirm the Dockerfile base image comes from an approved registry</label><span class="tag t-dv">dev</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Copy the Helm chart scaffold into <code>./chart</code>; set ingress className to <code>nginx-internal</code></label><span class="tag t-dv">dev</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Wire up the App Configuration SDK for feature flags — incomplete work merges to trunk behind a flag, not on a branch</label><span class="tag t-dv">dev</span></div>
+    </div>
+    <div class="cs">
+      <div class="ch">Step 2 — Azure Setup</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create Entra ID App Registrations for dev, staging, and prod</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Add app-specific secrets to each Key Vault (kv-platform-dev / -staging / -prod)</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create private DNS A records for the app hostname in each environment's private zone</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Confirm no new firewall rules are needed — if the app calls an external API, that's a hub firewall change request with its own lead time</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create the Azure DevOps variable group with the three Client IDs</label><span class="tag t-op">ops</span></div>
+    </div>
+    <div class="cs">
+      <div class="ch">Step 3 — Exposure Decision</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Default is internal only. Confirm the app genuinely needs external access before going any further</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>If external: raise an exception with a named owner and documented business justification</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>If external: add a listener and backend pool to the existing App Gateway WAF v2 rather than provisioning a new gateway</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>If external: confirm the WAF policy is in Prevention mode, not Detection, before go-live</label><span class="tag t-op">ops</span></div>
+    </div>
+    <div class="cs">
+      <div class="ch">Step 4 — Pipeline &amp; First Deploy</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Copy azure-pipelines.yml; set appName, appType, exposure, and approvers</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create the pipeline, link the variable group, confirm it targets the self-hosted agent pool</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Push to main — confirm the image lands in ACR and the pod reaches Running in the dev namespace</label><span class="tag t-dv">dev</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Hit the internal URL from the corporate network; confirm the SSO round-trip works</label><span class="tag t-dv">dev</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Promote through staging, then approve prod — verify prod is running the identical digest</label><span class="tag t-op">ops</span></div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:2.5rem">SSO Integration by Stack</div>
+  <p class="section-sub">Unchanged — Entra ID works the same whether the app is public or private.</p>
+
+  <div class="code"><span class="lbl">C# — Program.cs</span>builder.Services.<span class="v">AddMicrosoftIdentityWebApiAuthentication</span>(builder.Configuration);
+builder.Services.<span class="v">AddAuthorization</span>();
+<span class="c">// TenantId + ClientId injected as env vars from Key Vault via CSI</span></div>
+
+  <div class="code"><span class="lbl">React — MSAL</span><span class="k">import</span> { <span class="v">PublicClientApplication</span> } <span class="k">from</span> <span class="v">"@azure/msal-browser"</span>;
+<span class="k">const</span> msal = <span class="k">new</span> <span class="v">PublicClientApplication</span>({
+  <span class="k">auth</span>: { <span class="k">clientId</span>: <span class="v">import.meta.env.VITE_CLIENT_ID</span>,
+           <span class="k">authority</span>: <span class="v">`https://login.microsoftonline.com/${TENANT_ID}`</span> }
+});</div>
+
+  <div class="code"><span class="lbl">Python — FastAPI</span><span class="k">from</span> <span class="v">fastapi_azure_auth</span> <span class="k">import</span> <span class="v">SingleTenantAzureAuthorizationCodeBearer</span>
+azure_scheme = <span class="v">SingleTenantAzureAuthorizationCodeBearer</span>(
+    <span class="k">app_client_id</span>=<span class="v">os.getenv("AZURE_CLIENT_ID")</span>,
+    <span class="k">tenant_id</span>=<span class="v">os.getenv("AZURE_TENANT_ID")</span>
+)</div>
+</div>
+
+<div id="checklist" class="panel">
+  <div class="section-title">Platform Setup Checklist</div>
+  <p class="section-sub">Assumes MLZ is already deployed. Phase 0 is new — verify what you've inherited before building on top of it.</p>
+
+  <div class="checklist">
+    <div class="cs">
+      <div class="ch">Phase 0 — Inherit &amp; Verify (new)</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Confirm which MLZ tiers exist as separate subscriptions versus a single-subscription deployment</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Locate the T1 Log Analytics workspace resource ID — you will reuse it, not replace it</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Confirm the firewall SKU (Premium vs Standard) and who owns firewall rule change requests</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Review the Azure Policy assignments MLZ applied; run <code>what-if</code> against your platform Bicep before committing to a design</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Confirm available address space in the MLZ super network for two new T3 spokes</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Confirm the corporate network reaches spoke VNets (ExpressRoute/VPN) — internal ingress depends on it</label><span class="tag t-mlz">mlz</span></div>
+    </div>
+    <div class="cs">
+      <div class="ch">Phase 1 — Spokes &amp; Core Infrastructure</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Provision the T3 non-prod spoke (VNet, hub peering, UDR to firewall, NSGs)</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Provision the T3 production spoke (separate subscription, same pattern)</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Deploy the non-prod AKS cluster: private, <code>outboundType=userDefinedRouting</code>, OIDC issuer, workload identity, KV CSI add-on</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Deploy the prod AKS cluster with the same flags against the prod spoke subnet</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create namespaces: dev + staging on non-prod, prod on the prod cluster</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Provision ACR <strong>Premium</strong> in T2 with tag immutability and private endpoints into both spokes</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create three Key Vaults with public network access disabled plus private endpoints</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create three App Configuration stores (Standard tier — required for feature flags)</label><span class="tag t-az">azure</span></div>
+    </div>
+    <div class="cs">
+      <div class="ch">Phase 2 — Firewall &amp; Networking</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Submit a firewall rule request for AKS required FQDNs (use the <code>AzureKubernetesService</code> FQDN tag)</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Submit firewall rules for build agents: package feeds, Azure DevOps endpoints, base image sources</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Install NGINX ingress via Helm with the internal LB annotation; make <code>nginx-internal</code> the default class</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create private DNS zones for *.apps.internal.yourco.com and link them to both spoke VNets</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Install cert-manager wired to your internal CA — not Let's Encrypt, since there's no public validation path</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Verify egress: exec into a pod and confirm outbound traffic traverses the hub firewall and is logged</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label><em>Defer until the first external app:</em> App Gateway WAF v2 in a DMZ subnet</label><span class="tag t-az">azure</span></div>
+    </div>
+    <div class="cs">
+      <div class="ch">Phase 3 — CI/CD Platform</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create the Azure DevOps project(s) and platform-repo with shared templates, scaffolds, and base Helm chart</label><span class="tag t-dv">dev</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Deploy the self-hosted VMSS agent pool in the T2 spoke — scale to zero when idle</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create service connections using workload identity federation (no service principal secrets)</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create ADO Environments (dev, staging, prod) with an approval check on prod</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Lock AKS namespace RBAC — only the pipeline identity may deploy; humans get read-only</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Enable ACR tag immutability so pushed tags cannot be overwritten</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Set branch policies on main: PR required, 1 reviewer, pipeline triggers on merge</label><span class="tag t-dv">dev</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Configure failure behaviour so a red build blocks deployment to every downstream environment</label><span class="tag t-op">ops</span></div>
+    </div>
+    <div class="cs">
+      <div class="ch">Phase 4 — Identity &amp; Observability</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Create the Platform Admin Entra group — members approve prod deployments</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Configure Workload Identity federation for AKS → Key Vault access</label><span class="tag t-az">azure</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Point Container Insights at the existing MLZ T1 workspace</label><span class="tag t-mlz">mlz</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Set log ingestion filters and retention <em>before</em> prod traffic — this is the easiest cost to let run away</label><span class="tag t-op">ops</span></div>
+    </div>
+    <div class="cs">
+      <div class="ch">Phase 5 — Prove It Works</div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Deploy a hello-world app end to end through the full pipeline</label><span class="tag t-dv">dev</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Confirm Key Vault secrets mount into the pod via CSI and workload identity</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Confirm SSO works end to end in all three environments from the corporate network</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Intentionally break a test — confirm the red build blocks deployment everywhere</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Test rollback: <code>helm rollback</code> in prod, confirm the prior digest restores cleanly</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Verify staging genuinely mirrors prod — diff the rendered Helm manifests between environments</label><span class="tag t-op">ops</span></div>
+      <div class="ci" onclick="tg(this)"><input type="checkbox"><label>Write the company-specific New App Playbook wiki page</label><span class="tag t-dv">dev</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(e,id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  e.currentTarget.classList.add('active');
+}
+function tg(el){
+  const cb=el.querySelector('input');
+  cb.checked=!cb.checked;
+  el.classList.toggle('done',cb.checked);
+}
+</script>
+</body>
+</html>

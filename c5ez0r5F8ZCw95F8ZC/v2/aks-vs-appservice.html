@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS vs App Service — on Mission LZ</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0d0d0f;--paper:#f5f2eb;--steel:#1a2332;--aks:#0078d4;--svc:#7c3aed;--green:#00b4a0;--amber:#f59e0b;--accent:#e8e0d0;--rule:rgba(13,13,15,.12);--mono:'IBM Plex Mono',monospace;--serif:'Fraunces',serif}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--mono);min-height:100vh}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:.5}
+  header{border-bottom:1px solid var(--rule);padding:2rem 3rem;display:flex;justify-content:space-between;align-items:flex-end}
+  .logo{font-family:var(--serif);font-size:1.1rem;font-weight:600}
+  .logo span{color:var(--aks)}
+  .meta{font-size:.6rem;color:rgba(13,13,15,.4);letter-spacing:.1em;text-transform:uppercase;text-align:right;line-height:1.8}
+  .hero{padding:3rem 3rem 2rem}
+  .hero h1{font-family:var(--serif);font-size:clamp(2rem,4vw,3.2rem);font-weight:900;line-height:1.05;letter-spacing:-.03em;margin-bottom:.8rem}
+  .hero h1 em{font-style:italic;font-weight:300;color:var(--svc)}
+  .hero p{font-size:.72rem;color:rgba(13,13,15,.5);line-height:1.9;max-width:640px}
+  .banner{margin:0 3rem 2rem;border:1px solid var(--amber);background:rgba(245,158,11,.07);padding:1.2rem 1.5rem;font-size:.69rem;line-height:1.8;color:rgba(13,13,15,.6)}
+  .banner strong{color:var(--amber)}
+  .slider{margin:0 3rem 2rem;border:1px solid var(--rule);padding:1.5rem 2rem;background:var(--accent);display:flex;align-items:center;gap:2.5rem;flex-wrap:wrap}
+  .slider label{font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(13,13,15,.5)}
+  .slider input[type=range]{background:var(--paper);border:1px solid var(--rule);cursor:pointer;width:190px}
+  .slider .rv{font-size:1rem;font-family:var(--serif);font-weight:600;color:var(--aks)}
+  .slider p{font-size:.64rem;color:rgba(13,13,15,.42);line-height:1.75;flex:1;min-width:220px}
+  .h2h{margin:0 3rem 2rem;display:grid;grid-template-columns:1fr 60px 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+  .hc{background:var(--paper);padding:1.9rem}
+  .hc.a{border-top:4px solid var(--aks)}
+  .hc.s{border-top:4px solid var(--svc)}
+  .hc.vs{background:var(--steel);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:1.1rem;font-weight:900;color:rgba(255,255,255,.3)}
+  .hl{font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem}
+  .hl.a{color:var(--aks)}.hl.s{color:var(--svc)}
+  .hp{font-family:var(--serif);font-size:2.2rem;font-weight:900;letter-spacing:-.03em;line-height:1;margin-bottom:.3rem}
+  .hs{font-size:.61rem;color:rgba(13,13,15,.4);line-height:1.7}
+  .delta{margin-top:.8rem;padding:.6rem .8rem;font-size:.64rem;line-height:1.7}
+  .delta.aw{background:rgba(0,120,212,.08);color:var(--aks)}
+  .delta.sw{background:rgba(124,58,237,.08);color:var(--svc)}
+  .chartbox{margin:0 3rem 2rem;border:1px solid var(--rule);padding:2rem}
+  .chartbox h3{font-family:var(--serif);font-size:1.1rem;font-weight:600;margin-bottom:.5rem;letter-spacing:-.02em}
+  .chartbox p{font-size:.67rem;color:rgba(13,13,15,.5);margin-bottom:1.5rem;line-height:1.8}
+  canvas{width:100%;height:210px}
+  .tbl{margin:0 3rem 2rem;border:1px solid var(--rule)}
+  .th{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr;background:var(--steel);color:rgba(255,255,255,.6);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;padding:.8rem 1.5rem;gap:1rem}
+  .row{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr;gap:1rem;padding:1rem 1.5rem;border-bottom:1px solid var(--rule);font-size:.69rem;align-items:start}
+  .row:last-child{border-bottom:none}
+  .row:hover{background:var(--accent)}
+  .cat{font-size:.57rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(13,13,15,.35);margin-bottom:.2rem}
+  .nm{font-weight:600}
+  .ds{font-size:.61rem;color:rgba(13,13,15,.45);margin-top:.25rem;line-height:1.65}
+  .r{text-align:right}
+  .av{color:var(--aks);font-weight:600}.sv{color:var(--svc);font-weight:600}
+  .tot{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr;gap:1rem;padding:1.1rem 1.5rem;background:var(--steel);color:#fff;font-size:.71rem;font-weight:600}
+  .trades{margin:0 3rem 2rem;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+  .tcol{background:var(--paper)}
+  .thd{padding:1rem 1.5rem;font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;border-bottom:1px solid var(--rule)}
+  .thd.a{color:var(--aks);background:rgba(0,120,212,.05)}
+  .thd.s{color:var(--svc);background:rgba(124,58,237,.05)}
+  .ti{padding:.9rem 1.5rem;border-bottom:1px solid var(--rule);font-size:.68rem;line-height:1.75;display:grid;grid-template-columns:1.1rem 1fr;gap:.5rem;align-items:start}
+  .ti:last-child{border-bottom:none}
+  .ic{font-size:.72rem;margin-top:.1rem}
+  .win{color:var(--green)}.loss{color:rgba(13,13,15,.35)}
+  .dim{color:rgba(13,13,15,.42)}
+  .verdict{margin:0 3rem 3rem;border:1px solid var(--rule);padding:2rem;background:var(--steel);color:#fff}
+  .verdict h3{font-family:var(--serif);font-size:1.2rem;font-weight:600;margin-bottom:1rem;color:rgba(255,255,255,.9);letter-spacing:-.02em}
+  .verdict p{font-size:.71rem;line-height:1.9;color:rgba(255,255,255,.62);margin-bottom:.9rem}
+  .verdict strong{color:rgba(255,255,255,.92)}
+  .verdict .hlt{color:var(--amber)}
+  @media(max-width:700px){
+    header,.hero,.slider,.h2h,.chartbox,.tbl,.trades,.verdict,.banner{margin-left:1rem;margin-right:1rem;padding-left:1.2rem;padding-right:1.2rem}
+    .h2h{grid-template-columns:1fr}.hc.vs{display:none}
+    .trades{grid-template-columns:1fr}
+    .th,.row,.tot{grid-template-columns:2fr 1fr}
+    .th>*:nth-child(n+3),.row>*:nth-child(n+3),.tot>*:nth-child(n+3){display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">internal<span>.</span>platform <span style="color:rgba(13,13,15,.3);font-weight:400">/ comparison</span></div>
+  <div class="meta">AKS vs App Service · inside MLZ<br>Azure Commercial · internal-first</div>
+</header>
+
+<div class="hero">
+  <h1>AKS vs<br><em>App Service</em></h1>
+  <p>Revisited under the MLZ constraint. The headline conclusion survives, but the reasoning changed: private networking requirements erase most of App Service's low-end cost advantage, which pulls the crossover point down to roughly two or three apps.</p>
+</div>
+
+<div class="banner">
+  <strong>What changed:</strong> the earlier comparison priced App Service as if you could run Basic or Standard plans with public endpoints. Inside an SCCA boundary you can't — private endpoints and VNet integration require Premium tier at minimum, and each app needs its own private endpoint. Premium v4 is now GA (Microsoft reports over 50% better performance than v3 for the P1–P3 range), which improves price-performance but doesn't change the per-plan floor. Exact Pv4 list rates vary by region — treat the App Service figures here as directional and confirm in the calculator.
+</div>
+
+<div class="slider">
+  <div>
+    <label>Number of apps: <span class="rv" id="n-disp">5</span></label><br>
+    <input type="range" min="1" max="15" value="5" id="n" oninput="recalc()">
+  </div>
+  <p>Each app assumes dev, staging, and prod instances. AKS cost is mostly fixed platform overhead; App Service scales close to linearly because each app needs plan capacity and its own private endpoint. Drag to find your crossover.</p>
+</div>
+
+<div class="h2h">
+  <div class="hc a">
+    <div class="hl a">AKS on MLZ</div>
+    <div class="hp" id="p-aks">—</div>
+    <div class="hs">per month · platform + <span id="n-a">5 apps</span></div>
+    <div class="delta" id="d-aks"></div>
+  </div>
+  <div class="hc vs">vs</div>
+  <div class="hc s">
+    <div class="hl s">App Service on MLZ</div>
+    <div class="hp" id="p-svc">—</div>
+    <div class="hs">Premium tier + private endpoints · <span id="n-s">5 apps</span></div>
+    <div class="delta" id="d-svc"></div>
+  </div>
+</div>
+
+<div class="chartbox">
+  <h3>Cost Crossover by App Count</h3>
+  <p>AKS carries high fixed cost and near-zero marginal cost. App Service inside MLZ carries a Premium-tier floor per plan plus a private endpoint per app, so it climbs steadily. They cross at roughly <strong id="cx">2–3 apps</strong>.</p>
+  <canvas id="chart"></canvas>
+</div>
+
+<div class="tbl">
+  <div class="th"><div>Cost category</div><div class="r">AKS</div><div class="r">App Service</div><div class="r">Difference</div></div>
+
+  <div class="row">
+    <div><div class="cat">Compute</div><div class="nm">Production hosting</div><div class="ds">AKS: shared prod node pool across all apps. App Service: Premium v3/v4 plan capacity — apps can share a plan, but plan sizing grows with app count and noisy-neighbour risk grows with it.</div></div>
+    <div class="r av" id="a-comp">—</div><div class="r sv" id="s-comp">—</div><div class="r" id="d-comp">—</div>
+  </div>
+  <div class="row">
+    <div><div class="cat">Compute</div><div class="nm">Dev &amp; staging</div><div class="ds">AKS: one shared non-prod cluster, scaled down out of hours. App Service: private endpoints force Premium tier even for non-prod, so you can't use cheap Basic plans for dev the way you would in a public deployment.</div></div>
+    <div class="r av" id="a-dev">—</div><div class="r sv" id="s-dev">—</div><div class="r" id="d-dev">—</div>
+  </div>
+  <div class="row">
+    <div><div class="cat">Platform</div><div class="nm">Cluster overhead</div><div class="ds">AKS: two control planes plus two system node pools. App Service has no equivalent — this is the fixed cost AKS pays up front and App Service doesn't.</div></div>
+    <div class="r av">$426</div><div class="r sv">$0</div><div class="r" style="color:var(--svc);font-weight:600">AppSvc −$426</div>
+  </div>
+  <div class="row">
+    <div><div class="cat">Networking</div><div class="nm">Private endpoints</div><div class="ds">AKS: roughly ten endpoints total for shared services regardless of app count. App Service: each app needs its own inbound private endpoint, so this line scales directly with your portfolio.</div></div>
+    <div class="r av">~$75</div><div class="r sv" id="s-pe">—</div><div class="r" id="d-pe">—</div>
+  </div>
+  <div class="row">
+    <div><div class="cat">CI/CD</div><div class="nm">Self-hosted build agents</div><div class="ds">Both need them. Private endpoints and private API servers are unreachable from Microsoft-hosted agents either way, so this is a wash rather than an AKS-specific tax.</div></div>
+    <div class="r av">~$90</div><div class="r sv">~$90</div><div class="r dim">Tied</div>
+  </div>
+  <div class="row">
+    <div><div class="cat">Shared</div><div class="nm">Key Vault, App Config, observability</div><div class="ds">Identical choices in both worlds — the same three vaults, three config stores, and ingestion into the existing MLZ workspace.</div></div>
+    <div class="r av">~$273</div><div class="r sv">~$273</div><div class="r dim">Tied</div>
+  </div>
+  <div class="row">
+    <div><div class="cat">Registry</div><div class="nm">ACR Premium</div><div class="ds">AKS needs it. App Service needs it too if you deploy containers; slightly less relevant if you deploy code packages directly, which is a real option for your .NET and Python apps.</div></div>
+    <div class="r av">~$50</div><div class="r sv">~$50</div><div class="r dim">Tied</div>
+  </div>
+
+  <div class="tot"><div>TOTAL — <span id="n-t">5</span> apps, PAYG</div><div class="r" id="t-aks">—</div><div class="r" id="t-svc">—</div><div class="r" id="t-diff">—</div></div>
+</div>
+
+<div class="trades">
+  <div class="tcol">
+    <div class="thd a">⎈ AKS — what you gain</div>
+    <div class="ti"><span class="ic win">✓</span><span>Fixed platform cost. App number ten costs almost nothing more than app number five. Scales economically with your portfolio.</span></div>
+    <div class="ti"><span class="ic win">✓</span><span>Any language, any runtime. Your C#, Python, React, and Angular apps all deploy through one identical mechanism.</span></div>
+    <div class="ti"><span class="ic win">✓</span><span>Pipeline-only deployment is enforceable by network topology. A private API server plus namespace RBAC makes manual deploys physically impossible, not merely discouraged.</span></div>
+    <div class="ti"><span class="ic win">✓</span><span>One private endpoint set for shared services, regardless of app count. App Service needs one per app.</span></div>
+    <div class="ti"><span class="ic win">✓</span><span>Staging is a namespace, not a separate paid resource — which removes the budget incentive to skimp on it.</span></div>
+    <div class="ti"><span class="ic loss">—</span><span class="dim">Higher fixed cost. You pay for the platform before the first app ships.</span></div>
+    <div class="ti"><span class="ic loss">—</span><span class="dim">More surface area to own: node patching, ingress config, firewall rule requests.</span></div>
+    <div class="ti"><span class="ic loss">—</span><span class="dim">Longer setup. Realistically 4–8 weeks inside MLZ, mostly spent on private networking.</span></div>
+  </div>
+  <div class="tcol">
+    <div class="thd s">☁ App Service — what you gain</div>
+    <div class="ti"><span class="ic win">✓</span><span>Much faster to first deploy. Days rather than weeks, even accounting for VNet integration and private endpoint setup.</span></div>
+    <div class="ti"><span class="ic win">✓</span><span>Deployment slots give you blue/green and instant rollback without writing any Helm.</span></div>
+    <div class="ti"><span class="ic win">✓</span><span>Premium v4 is now GA with materially better price-performance than v3 — Microsoft reports over 50% higher throughput on the P1–P3 range.</span></div>
+    <div class="ti"><span class="ic win">✓</span><span>Far less to operate. No node pools, no ingress controller, no cert-manager, no cluster upgrades.</span></div>
+    <div class="ti"><span class="ic win">✓</span><span>Still cheaper at one or two apps, and a legitimate answer if your portfolio genuinely stays that small.</span></div>
+    <div class="ti"><span class="ic loss">—</span><span class="dim">Private endpoints force Premium tier everywhere, including dev — the cheap-non-prod trick isn't available.</span></div>
+    <div class="ti"><span class="ic loss">—</span><span class="dim">Cost scales with app count. Ten apps across three environments is a lot of plan capacity and thirty-ish private endpoints.</span></div>
+    <div class="ti"><span class="ic loss">—</span><span class="dim">Harder to enforce pipeline-only deploys. Portal and CLI publish paths always exist, so MinimumCD discipline relies on culture rather than topology.</span></div>
+  </div>
+</div>
+
+<div class="verdict">
+  <h3>The Verdict</h3>
+  <p>At <strong id="v-n">5 apps</strong>, AKS comes out <strong id="v-amt" class="hlt">—</strong>, and the gap widens with every app you add. But the honest headline is that <strong>MLZ shifted the crossover point down, not the conclusion</strong>. Private networking is expensive for App Service in a way it isn't for AKS, because the cost attaches per app rather than per platform.</p>
+  <p><strong>The MinimumCD argument is the stronger one.</strong> In App Service, anyone with publish rights can push from a laptop or the portal, and staging environments get skimped because each one is a separately billed resource. Under AKS with a private API server, the pipeline is the only door — enforced by the network, not by a policy document nobody reads.</p>
+  <p><strong class="hlt">Recommendation:</strong> AKS, given you expect five or more apps and you're building for CD discipline from the start. If you'd rather ship something in two weeks than build a platform in eight, App Service Premium with private endpoints is a defensible interim step, and the platform repo, Helm charts, and pipeline templates from this architecture largely carry over when you migrate.</p>
+  <p style="font-size:.66rem;color:rgba(255,255,255,.4)">Figures are directional US-region list prices. App Service Premium v4 rates vary by region and Pv4 isn't available everywhere yet — confirm in the Azure Pricing Calculator against your actual agreement before committing.</p>
+</div>
+
+<script>
+// AKS: high fixed, low marginal
+const AKS_BASE=1290, AKS_PER_APP=18;
+// App Service in MLZ: shared services + Premium plan capacity + private endpoint per app
+const SVC_BASE=413;              // shared: KV/AppConfig/obs + ACR + agents
+const SVC_PROD_PER_APP=241;      // ~P1v3/P1v4-class plan share, prod
+const SVC_NONPROD_PER_APP=150;   // dev+staging must also be Premium for private endpoints
+const SVC_PE_PER_APP=22;         // ~3 private endpoints per app
+
+function aks(n){return AKS_BASE+n*AKS_PER_APP}
+function svc(n){
+  const full=Math.min(n,3), shared=Math.max(0,n-3);
+  const prod=full*SVC_PROD_PER_APP+shared*SVC_PROD_PER_APP*0.55;
+  return Math.round(SVC_BASE+prod+n*SVC_NONPROD_PER_APP+n*SVC_PE_PER_APP);
+}
+function crossover(){for(let i=1;i<=20;i++){if(aks(i)<=svc(i))return i}return null}
+
+function draw(){
+  const c=document.getElementById('chart'),ctx=c.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const w=c.offsetWidth||800,h=210;
+  c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const maxN=12,maxC=5000,pad={l:62,r:20,t:22,b:38};
+  const pw=w-pad.l-pad.r,ph=h-pad.t-pad.b;
+  ctx.strokeStyle='rgba(13,13,15,.07)';ctx.lineWidth=1;
+  ctx.font='10px "IBM Plex Mono",monospace';
+  for(let v=0;v<=maxC;v+=1000){
+    const y=pad.t+ph-(v/maxC)*ph;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+pw,y);ctx.stroke();
+    ctx.fillStyle='rgba(13,13,15,.35)';ctx.textAlign='right';
+    ctx.fillText('$'+(v/1000).toFixed(0)+'k',pad.l-8,y+3);
+  }
+  const X=n=>pad.l+((n-1)/(maxN-1))*pw, Y=c2=>pad.t+ph-(Math.min(c2,maxC)/maxC)*ph;
+  ctx.beginPath();ctx.strokeStyle='#0078d4';ctx.lineWidth=2.5;
+  for(let n=1;n<=maxN;n++){const x=X(n),y=Y(aks(n));n===1?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke();
+  ctx.beginPath();ctx.strokeStyle='#7c3aed';ctx.lineWidth=2.5;
+  for(let n=1;n<=maxN;n++){const x=X(n),y=Y(svc(n));n===1?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke();
+  const cur=+document.getElementById('n').value;
+  ctx.strokeStyle='rgba(13,13,15,.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(X(cur),pad.t);ctx.lineTo(X(cur),pad.t+ph);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(13,13,15,.35)';ctx.textAlign='center';
+  for(let n=1;n<=maxN;n+=2)ctx.fillText(n,X(n),pad.t+ph+17);
+  ctx.fillText('apps →',pad.l+pw-14,pad.t+ph+30);
+  ctx.fillStyle='#0078d4';ctx.fillRect(pad.l,pad.t+3,18,3);
+  ctx.fillStyle='rgba(13,13,15,.55)';ctx.textAlign='left';ctx.font='11px "IBM Plex Mono",monospace';
+  ctx.fillText('AKS',pad.l+24,pad.t+9);
+  ctx.fillStyle='#7c3aed';ctx.fillRect(pad.l+62,pad.t+3,18,3);
+  ctx.fillStyle='rgba(13,13,15,.55)';ctx.fillText('App Service',pad.l+86,pad.t+9);
+}
+
+function recalc(){
+  const n=+document.getElementById('n').value;
+  document.getElementById('n-disp').textContent=n;
+  const a=aks(n),s=svc(n),diff=Math.abs(a-s),aWins=a<s;
+
+  document.getElementById('p-aks').textContent='~$'+a.toLocaleString();
+  document.getElementById('p-svc').textContent='~$'+s.toLocaleString();
+  document.getElementById('n-a').textContent=n+' app'+(n!==1?'s':'');
+  document.getElementById('n-s').textContent=n+' app'+(n!==1?'s':'');
+
+  const da=document.getElementById('d-aks'),ds=document.getElementById('d-svc');
+  da.className='delta '+(aWins?'aw':'aw');ds.className='delta sw';
+  da.textContent=(aWins?'✓ $':'↑ $')+diff.toLocaleString()+'/mo '+(aWins?'cheaper':'more expensive');
+  ds.textContent=(aWins?'↑ $':'✓ $')+diff.toLocaleString()+'/mo '+(aWins?'more expensive':'cheaper');
+
+  const sProd=Math.round(Math.min(n,3)*SVC_PROD_PER_APP+Math.max(0,n-3)*SVC_PROD_PER_APP*0.55);
+  const sDev=n*SVC_NONPROD_PER_APP, sPe=n*SVC_PE_PER_APP;
+  const aProd=421+n*18;
+  document.getElementById('a-comp').textContent='$'+aProd;
+  document.getElementById('s-comp').textContent='~$'+sProd;
+  document.getElementById('d-comp').textContent=(aProd<sProd?'AKS −$':'AppSvc −$')+Math.abs(aProd-sProd);
+  document.getElementById('a-dev').textContent='$210';
+  document.getElementById('s-dev').textContent='~$'+sDev;
+  document.getElementById('d-dev').textContent=(210<sDev?'AKS −$':'AppSvc −$')+Math.abs(210-sDev);
+  document.getElementById('s-pe').textContent='~$'+sPe;
+  document.getElementById('d-pe').textContent=(75<sPe?'AKS −$':'AppSvc −$')+Math.abs(75-sPe);
+
+  document.getElementById('n-t').textContent=n;
+  document.getElementById('t-aks').textContent='~$'+a.toLocaleString();
+  document.getElementById('t-svc').textContent='~$'+s.toLocaleString();
+  document.getElementById('t-diff').textContent=(aWins?'AKS −$':'AppSvc −$')+diff.toLocaleString();
+
+  const cx=crossover();
+  document.getElementById('cx').textContent=cx?(cx+' app'+(cx!==1?'s':'')):'>12 apps';
+  document.getElementById('v-n').textContent=n+' app'+(n!==1?'s':'');
+  const v=document.getElementById('v-amt');
+  v.textContent=aWins?('$'+diff.toLocaleString()+'/mo cheaper'):('$'+diff.toLocaleString()+'/mo more expensive');
+  v.style.color=aWins?'#f59e0b':'#f59e0b';
+  draw();
+}
+window.addEventListener('resize',draw);
+recalc();
+</script>
+</body>
+</html>
